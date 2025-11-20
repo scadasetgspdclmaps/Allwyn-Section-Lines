@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVBEGUMPET_AB_Switch_142 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVBEGUMPET_AB_Switch_142","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"fid":"1","Label":"AB"},"geometry":{"type":"Point","coordinates":[78.451125,17.445885]}}]}

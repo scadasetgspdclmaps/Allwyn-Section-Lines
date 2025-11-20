@@ -1,0 +1,1 @@
+var json_33KVESIESIHTservice1_Double_Pole_Structure_18 = {"type":"FeatureCollection","name":"33KVESIESIHTservice1_Double_Pole_Structure_18","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

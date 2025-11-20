@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVMAITHRIVANAM_Double_Pole_Structure_108 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVMAITHRIVANAM_Double_Pole_Structure_108","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

@@ -1,0 +1,1 @@
+var json_132KVERRAGADA33KVALLWYNIdleTATATELESERVICES_AB_Switch_97 = {"type":"FeatureCollection","name":"132KVERRAGADA33KVALLWYNIdleTATATELESERVICES_AB_Switch_97","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"fid":"1","Label":"AB"},"geometry":{"type":"Point","coordinates":[78.436109,17.456609]}}]}

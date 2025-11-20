@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVLODHA_AB_Switch_112 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVLODHA_AB_Switch_112","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

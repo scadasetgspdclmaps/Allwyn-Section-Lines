@@ -1,0 +1,1 @@
+var json_132KVERRAGADA33KVBEGUMPET_AB_Switch_92 = {"type":"FeatureCollection","name":"132KVERRAGADA33KVBEGUMPET_AB_Switch_92","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

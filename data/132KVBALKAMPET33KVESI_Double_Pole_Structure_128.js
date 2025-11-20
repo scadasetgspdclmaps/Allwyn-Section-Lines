@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVESI_Double_Pole_Structure_128 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVESI_Double_Pole_Structure_128","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

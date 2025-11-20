@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVHYDERABADPUBLICSCHOOL_Double_Pole_Structure_118 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVHYDERABADPUBLICSCHOOL_Double_Pole_Structure_118","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

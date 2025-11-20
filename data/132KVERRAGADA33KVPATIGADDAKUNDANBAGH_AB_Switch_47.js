@@ -1,0 +1,1 @@
+var json_132KVERRAGADA33KVPATIGADDAKUNDANBAGH_AB_Switch_47 = {"type":"FeatureCollection","name":"132KVERRAGADA33KVPATIGADDAKUNDANBAGH_AB_Switch_47","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[{"type":"Feature","properties":{"fid":"1","Label":"AB"},"geometry":{"type":"Point","coordinates":[78.45123,17.446078]}}]}

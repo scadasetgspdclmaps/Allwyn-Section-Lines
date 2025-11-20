@@ -1,0 +1,1 @@
+var json_33KVALLWYNLOADHASUBSTATION1_Double_Pole_Structure_28 = {"type":"FeatureCollection","name":"33KVALLWYNLOADHASUBSTATION1_Double_Pole_Structure_28","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

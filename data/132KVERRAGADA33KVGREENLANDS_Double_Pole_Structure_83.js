@@ -1,0 +1,1 @@
+var json_132KVERRAGADA33KVGREENLANDS_Double_Pole_Structure_83 = {"type":"FeatureCollection","name":"132KVERRAGADA33KVGREENLANDS_Double_Pole_Structure_83","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

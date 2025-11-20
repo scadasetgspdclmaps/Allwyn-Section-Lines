@@ -1,0 +1,1 @@
+var json_132KVBALKAMPET33KVGREENLANDS_Cut_Points_124 = {"type":"FeatureCollection","name":"132KVBALKAMPET33KVGREENLANDS_Cut_Points_124","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}

@@ -1,0 +1,1 @@
+var json_132KVERRAGADA33KVALLWYNIdleTATATELESERVICES_Double_Pole_Structure_98 = {"type":"FeatureCollection","name":"132KVERRAGADA33KVALLWYNIdleTATATELESERVICES_Double_Pole_Structure_98","crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:OGC:1.3:CRS84"}},"features":[]}
