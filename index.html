@@ -185,7 +185,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--navy)}
 .leaflet-map-pane{will-change:transform;transform:translateZ(0)}
 .leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-shadow-pane{will-change:transform;transform:translateZ(0)}
 .leaflet-tile{transition:opacity .15s linear!important;-webkit-backface-visibility:hidden;backface-visibility:hidden}
-.leaflet-canvas-layer{image-rendering:crisp-edges}
+
 .leaflet-zoom-anim .leaflet-zoom-animated{transition:transform 0.22s cubic-bezier(0.25,0.46,0.45,0.94)!important}
 .leaflet-control-zoom{border:none!important;border-radius:10px!important;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.5)!important}
 .leaflet-control-zoom a{background:var(--panel)!important;color:var(--live)!important;border:none!important;
@@ -515,8 +515,7 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 // ══════════════════════════════════════════════════
 const map = L.map('map',{
   center:[17.4855,78.5122], zoom:14, zoomControl:false,
-  preferCanvas:true,
-  renderer:L.canvas({tolerance:12}),
+  preferCanvas:false,
   zoomAnimation:true, zoomAnimationThreshold:4,
   fadeAnimation:true, markerZoomAnimation:true,
   inertia:true, inertiaDeceleration:2800, inertiaMaxSpeed:Infinity,
@@ -733,7 +732,7 @@ DATA_REGISTRY.forEach(reg=>{
           {color:'#ffffff',weight:3,className:flowClass,interactive:false,bubblingMouseEvents:false,pane:'flowPane'});
         layer.bindPopup(popup(feat,reg),{maxWidth:340,minWidth:260,autoPanPadding:[30,30]});
         layer.on('popupopen',function(e){e.popup.setContent(popup(feat,reg));});
-        layer.on('click',function(e){if(e.originalEvent)e.originalEvent.stopPropagation();layer.openPopup(e.latlng);});
+        layer.on('click', function(e) { L.DomEvent.stopPropagation(e); layer.openPopup(e.latlng); });
         layer.on('mouseover',e=>{e.target.setStyle({weight:7.5,opacity:1});if(e.target.flowLayer)e.target.flowLayer.setStyle({weight:4});});
         layer.on('mouseout',e=>{
           const isFocused=focusedFeeder&&focusedFeeder!==feederName;
@@ -751,16 +750,16 @@ DATA_REGISTRY.forEach(reg=>{
         layer=L.circleMarker(ll,{radius:4,fillColor:'#ffffff',fillOpacity:1,color:'#000000',weight:2,pane:'pointsPane'});
       }else if(reg.type==='ab'||reg.type==='dp'){
         layer=L.marker(ll,{icon:mkIcon('#ffff00','#000000','square'),pane:'pointsPane'});
-      }else if(reg.type==='ss33'){
+      }else if(reg.type.startsWith('ss33')){
         const h=`<div class="ss33-wrap"><div class="ss33-ring"></div><div class="ss33-core"><span class="ss33-bolt">⚡</span></div></div>`;
         layer=L.marker(ll,{zIndexOffset:1000,icon:L.divIcon({className:'',html:h,iconSize:[36,36],iconAnchor:[18,18]})});
-      }else if(reg.type==='ehts'){
+      }else if(reg.type.startsWith('eht')){
         const h=`<div class="eht-wrap"><div class="eht-rect"></div><div class="eht-core"><span class="eht-power">⚡</span><span class="eht-kv">EHT</span></div></div>`;
         layer=L.marker(ll,{zIndexOffset:1000,icon:L.divIcon({className:'',html:h,iconSize:[40,28],iconAnchor:[20,14]})});
       }
       if(layer){
         layer.bindPopup(popup(feat,reg),{maxWidth:340,minWidth:260});
-        layer.on('click',function(e){if(e.originalEvent)e.originalEvent.stopPropagation();layer.openPopup(e.latlng||layer.getLatLng());});
+        layer.on('click', function(e) { L.DomEvent.stopPropagation(e); layer.openPopup(e.latlng || layer.getLatLng()); });
         let poleNo=props['Pole Number']||props['Pole_No']||props['Name']||props['NAME']||props['id']||props['ID'];
         if(poleNo!==undefined&&poleNo!==null&&String(poleNo).trim()!==''&&String(poleNo).length<10){
           if(!reg.type.startsWith('ss')&&!reg.type.startsWith('eht')){
