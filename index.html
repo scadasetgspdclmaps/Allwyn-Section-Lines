@@ -399,6 +399,87 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 .fi-idle.fi-active{background:rgba(158,158,158,.25);color:#aaa;border-color:#aaa}
 .ss-label{background:rgba(9,22,37,.88)!important;border:1px solid rgba(0,200,255,.35)!important;border-radius:4px!important;color:#00c8ff!important;font-family:'Share Tech Mono',monospace!important;font-weight:normal;font-size:9px!important;letter-spacing:.3px!important;padding:2px 5px!important;white-space:nowrap!important;box-shadow:0 2px 6px rgba(0,0,0,.4)!important;opacity:.9!important;max-width:120px!important;overflow:hidden!important;text-overflow:ellipsis!important;pointer-events:none!important}
 .ss-label.leaflet-tooltip-top::before{border-top-color:rgba(0,200,255,.35)!important}
+
+/* ══ FEEDER SEARCH ══ */
+.fsearch-wrap{padding:8px 10px 6px;position:relative;flex-shrink:0}
+.fsearch-input{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:16px;padding:5px 10px 5px 28px;color:var(--text);font-family:var(--sans);
+  font-size:11px;outline:none;transition:all .25s}
+.fsearch-input:focus{border-color:var(--live);background:rgba(0,200,255,.06)}
+.fsearch-input::placeholder{color:rgba(176,204,224,.25)}
+.fsearch-ic{position:absolute;left:18px;top:50%;transform:translateY(-50%);
+  color:rgba(176,204,224,.3);font-size:11px;pointer-events:none}
+
+/* ══ FEEDER GROUPS ══ */
+.fgrp{margin-bottom:2px}
+.fgrp-hd{display:flex;align-items:center;gap:6px;padding:6px 8px 4px;cursor:pointer;
+  border-radius:6px;transition:background .2s;user-select:none;margin:2px 4px}
+.fgrp-hd:hover{background:rgba(0,200,255,.07)}
+.fgrp-arrow{font-size:9px;color:rgba(0,200,255,.5);transition:transform .2s;flex-shrink:0}
+.fgrp-hd.collapsed .fgrp-arrow{transform:rotate(-90deg)}
+.fgrp-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.fgrp-label{font-family:var(--mono);font-size:9px;color:rgba(0,200,255,.7);letter-spacing:1.5px;flex:1}
+.fgrp-cnt{font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.4);
+  background:rgba(0,200,255,.08);padding:2px 6px;border-radius:8px}
+.fgrp-body{overflow:hidden;transition:max-height .28s cubic-bezier(.4,0,.2,1)}
+.fgrp-body.collapsed{max-height:0!important;overflow:hidden}
+
+/* ══ EDIT PANEL (right side) ══ */
+#editPanel{position:fixed;top:52px;right:0;bottom:38px;z-index:960;width:300px;
+  background:linear-gradient(180deg,#081422fa,#0c1e30fa);
+  backdrop-filter:blur(22px);border-left:1px solid rgba(0,200,255,.22);
+  transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;box-shadow:-4px 0 30px rgba(0,0,0,.5)}
+#editPanel.open{transform:translateX(0)}
+.ep-hd{padding:13px 15px;border-bottom:1px solid rgba(0,200,255,.12);
+  display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ep-title{font-family:var(--mono);font-size:11px;color:var(--live);letter-spacing:1.5px;flex:1}
+.ep-pole-id{font-family:var(--mono);font-size:9px;color:rgba(0,200,255,.45);
+  background:rgba(0,200,255,.08);padding:2px 8px;border-radius:10px}
+.ep-close{cursor:pointer;color:rgba(176,204,224,.4);font-size:16px;
+  width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.ep-close:hover{color:#fff;background:rgba(255,255,255,.1)}
+.ep-body{flex:1;overflow-y:auto;padding:12px 14px}
+.ep-body::-webkit-scrollbar{width:3px}
+.ep-body::-webkit-scrollbar-thumb{background:rgba(0,200,255,.2);border-radius:3px}
+.ep-field{margin-bottom:10px}
+.ep-label{font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.55);
+  letter-spacing:1.5px;margin-bottom:4px;display:block}
+.ep-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(0,200,255,.15);
+  border-radius:6px;padding:7px 10px;color:var(--text);font-family:var(--sans);
+  font-size:12px;outline:none;transition:border-color .2s,background .2s}
+.ep-input:focus{border-color:var(--live);background:rgba(0,200,255,.07);color:#fff}
+.ep-foot{padding:12px 14px;border-top:1px solid rgba(0,200,255,.1);
+  display:flex;gap:8px;flex-shrink:0}
+.ep-btn{flex:1;padding:9px 6px;border:none;border-radius:7px;cursor:pointer;
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;font-weight:600;transition:all .2s}
+.ep-save{background:rgba(0,200,255,.15);color:var(--live);border:1px solid rgba(0,200,255,.3)}
+.ep-save:hover{background:rgba(0,200,255,.3);color:#fff}
+.ep-del{background:rgba(255,23,68,.1);color:#ff4466;border:1px solid rgba(255,23,68,.25)}
+.ep-del:hover{background:rgba(255,23,68,.25);color:#fff}
+
+/* ══ EDIT TOOLBAR (floating) ══ */
+#editToolbar{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);z-index:955;
+  background:rgba(8,18,30,.96);border:1px solid rgba(0,200,255,.25);border-radius:30px;
+  padding:8px 18px;display:none;align-items:center;gap:10px;
+  backdrop-filter:blur(20px);box-shadow:0 4px 28px rgba(0,0,0,.55),0 0 0 1px rgba(0,200,255,.05)}
+#editToolbar.visible{display:flex}
+.et-label{font-family:var(--mono);font-size:9px;color:rgba(0,200,255,.55);
+  letter-spacing:1.5px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.et-sep{width:1px;height:20px;background:rgba(0,200,255,.15);flex-shrink:0}
+.et-btn{padding:6px 13px;border:none;border-radius:20px;cursor:pointer;
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;font-weight:600;
+  transition:all .2s;white-space:nowrap}
+.et-edit{background:rgba(0,200,255,.15);color:var(--live);border:1px solid rgba(0,200,255,.3)}
+.et-edit:hover{background:rgba(0,200,255,.28)}
+.et-edit.active{background:rgba(0,200,255,.3);color:#fff;box-shadow:0 0 10px rgba(0,200,255,.3)}
+.et-download{background:rgba(0,230,118,.1);color:#00e676;border:1px solid rgba(0,230,118,.25)}
+.et-download:hover{background:rgba(0,230,118,.22)}
+.et-exit{background:rgba(255,255,255,.05);color:rgba(176,204,224,.45);border:1px solid rgba(255,255,255,.1)}
+.et-exit:hover{color:#fff;background:rgba(255,255,255,.1)}
+
+/* ══ EDIT MODE marker highlight ══ */
+.edit-mode-point{filter:drop-shadow(0 0 7px rgba(0,200,255,.9))!important;cursor:crosshair!important;transition:filter .2s}
 </style>
 </head>
 <body>
@@ -433,7 +514,11 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
         <span style="font-family:var(--sans);font-size:10px;color:rgba(0,200,255,.6);cursor:pointer;margin-left:6px;font-weight:600" onclick="toggleAllFeeders(false)">NONE</span>
       </div>
     </div>
-    <div id="feederChecks" style="display:flex;flex-direction:column;gap:2px;margin-top:4px"></div>
+    <div class="fsearch-wrap">
+      <span class="fsearch-ic">⌕</span>
+      <input class="fsearch-input" id="feederSearch" placeholder="Search feeders…" autocomplete="off" oninput="filterFeeders(this.value)"/>
+    </div>
+    <div id="feederChecks" style="display:flex;flex-direction:column;margin-top:2px"></div>
   </div>
 </div>
 <div id="map"></div>
@@ -454,6 +539,29 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 </div>
 
 <div id="toast"></div>
+
+<!-- ══ EDIT PANEL (right slide-in) ══ -->
+<div id="editPanel">
+  <div class="ep-hd">
+    <div class="ep-title">// EDIT POINT</div>
+    <span class="ep-pole-id" id="epPoleId"></span>
+    <div class="ep-close" onclick="closeEditPanel()">✕</div>
+  </div>
+  <div class="ep-body" id="editPanelBody"></div>
+  <div class="ep-foot">
+    <button class="ep-btn ep-save" onclick="saveEditPoint()">💾 SAVE</button>
+    <button class="ep-btn ep-del" onclick="deleteEditPoint()">🗑 DELETE</button>
+  </div>
+</div>
+
+<!-- ══ EDIT TOOLBAR (floating, shown when feeder focused) ══ -->
+<div id="editToolbar">
+  <span class="et-label" id="etFeederLabel">—</span>
+  <div class="et-sep"></div>
+  <button class="et-btn et-edit" id="etEditBtn" onclick="toggleEditMode()">✏️ EDIT MODE</button>
+  <button class="et-btn et-download" onclick="downloadFeederCSV()">⬇️ CSV</button>
+  <button class="et-btn et-exit" onclick="exitFocusedFeeder()">✕ EXIT</button>
+</div>
 
 <div class="status-legend">
   <div style="font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.6);letter-spacing:1.5px;margin-bottom:2px">// FEEDER STATUS</div>
@@ -584,6 +692,7 @@ const LGstate={'ug-lines':true,'oh-lines':true,points:true,dp:true,ab:true,cut:t
 let cableFilter='all';
 let globalFeederFallback=true;
 let focusedFeeder=null;
+let editLayerCounter=0;
 
 function mkIcon(fill,stroke,shape){
   const s=`<svg xmlns='http://www.w3.org/2000/svg' width='13' height='13'>${shape==='square'?`<rect width='13' height='13' rx='2' fill='${fill}' stroke='${stroke}' stroke-width='2'/>`:`<circle cx='6.5' cy='6.5' r='5.5' fill='${fill}' stroke='${stroke}' stroke-width='2'/>`}</svg>`;
@@ -773,6 +882,7 @@ DATA_REGISTRY.forEach(reg=>{
     }
 
     if(layer){
+      layer._editId=editLayerCounter++;
       allLayers.push({layer,reg,feederName,cable:cableType,poleNo:poleNoStr});
       if(!feederLayerMap[feederName])feederLayerMap[feederName]=[];
       feederLayerMap[feederName].push({layer,reg,cable:cableType});
@@ -902,12 +1012,7 @@ function updateFeederBadges(){
 
 function focusFeeder(fn){
   if(focusedFeeder===fn){
-    focusedFeeder=null;
-    allLayers.forEach(i=>{
-      if(i.layer.setStyle&&(i.reg.type==='lines'||i.reg.type==='fsegs')){i.layer.setStyle({opacity:.92});let cs=feederStatus[i.feederName]||'live';if(i.layer.flowLayer&&cs==='live')safelyManageClass(i.layer.flowLayer,'hidden-flow',false);}
-      else if(i.layer.setOpacity)i.layer.setOpacity(1);
-    });
-    toast('Focus cleared');return;
+    exitFocusedFeeder();return;
   }
   focusedFeeder=fn;const coords=[];
   allLayers.forEach(i=>{
@@ -919,6 +1024,11 @@ function focusFeeder(fn){
     if(i.feederName===fn&&i.layer.getLatLngs){const ll=i.layer.getLatLngs();if(ll.length)coords.push(...ll.flat());}
   });
   if(coords.length>0)map.flyToBounds(L.latLngBounds(coords),{padding:[50,50],animate:true,duration:.7,easeLinearity:.25});
+  // Show edit toolbar
+  const tb=document.getElementById('editToolbar');
+  const lbl=document.getElementById('etFeederLabel');
+  if(lbl)lbl.textContent=fn.split('→')[1]?.trim()||fn;
+  tb.classList.add('visible');
   toast(`Focused: ${fn.split('→')[1]?.trim()||fn}`);
 }
 
@@ -933,25 +1043,101 @@ function buildFeederChecks(){
   const container=document.getElementById('feederChecks');
   if(!container)return;container.innerHTML='';
   const FCOLORS=['#00c8ff','#ff9800','#00e676','#9c27b0','#2196f3','#f44336','#ffeb3b','#e91e63','#4caf50','#ff5722','#00bcd4','#cddc39'];
+
+  // GROUP DEFINITIONS
+  const GROUP_ORDER=['ALLWYN','BALKAMPET','ERRAGADA','NIMS','ESI','JANAPRIYA','OTHER'];
+  const GROUP_COLORS={'ALLWYN':'#00c8ff','BALKAMPET':'#ff9800','ERRAGADA':'#00e676','NIMS':'#9c27b0','ESI':'#f44336','JANAPRIYA':'#ffeb3b','OTHER':'#78909c'};
+  const groups={};
+  GROUP_ORDER.forEach(g=>{groups[g]=[];});
+
   [...feederNames].sort().forEach((fn,i)=>{
     feederState[fn]=true;
-    const color=FCOLORS[i%FCOLORS.length];
-    const short=fn.substring(0,28);
-    const row=document.createElement('div');
-    row.className='ftog-row';row.style.cssText='flex-wrap:wrap;gap:3px;padding:5px 6px;';
-    const fe=fn.replace(/'/g,"\\'");
-    row.innerHTML=`
-      <div style="display:flex;align-items:center;gap:6px;width:100%">
-        <div style="width:10px;height:10px;border-radius:2px;background:${color};flex-shrink:0;border:1px solid rgba(255,255,255,.2)"></div>
-        <span class="focus-txt" style="font-family:var(--sans);font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;min-width:0" title="Click to Focus" onclick="focusFeeder('${fe}')">${short}</span>
-        <div class="tog" id="ftog-${i}" style="flex-shrink:0" onclick="toggleSingleFeeder('${fe}',${i},event)"></div>
-      </div>
-      <div style="display:flex;gap:3px;padding-left:16px;margin-top:3px;width:100%">
-        <button class="fi-btn fi-live"      data-feeder="${fe}" onclick="setFeederStatus('${fe}','live',this)">⚡ Live</button>
-        <button class="fi-btn fi-breakdown" data-feeder="${fe}" onclick="setFeederStatus('${fe}','breakdown',this)">🔴 Down</button>
-        <button class="fi-btn fi-idle"      data-feeder="${fe}" onclick="setFeederStatus('${fe}','idle',this)">⏸ Idle</button>
-      </div>`;
-    container.appendChild(row);
+    const up=fn.toUpperCase();
+    let grp='OTHER';
+    if(up.startsWith('ALLWYN'))grp='ALLWYN';
+    else if(up.includes('BALKAMPET'))grp='BALKAMPET';
+    else if(up.includes('ERRAGADA'))grp='ERRAGADA';
+    else if(up.includes('NIMS'))grp='NIMS';
+    else if(up.includes('ESI'))grp='ESI';
+    else if(up.includes('JANAPRIYA'))grp='JANAPRIYA';
+    groups[grp].push({fn,i,color:FCOLORS[i%FCOLORS.length]});
+  });
+
+  let globalIdx=0;
+  GROUP_ORDER.forEach(grpKey=>{
+    const members=groups[grpKey];
+    if(!members.length)return;
+    const grpDiv=document.createElement('div');
+    grpDiv.className='fgrp';
+    grpDiv.dataset.group=grpKey;
+
+    // Group header
+    const hd=document.createElement('div');
+    hd.className='fgrp-hd';
+    hd.innerHTML=`<span class="fgrp-arrow">▾</span>
+      <div class="fgrp-dot" style="background:${GROUP_COLORS[grpKey]||'#78909c'}"></div>
+      <span class="fgrp-label">${grpKey}</span>
+      <span class="fgrp-cnt">${members.length}</span>`;
+    hd.onclick=()=>{
+      hd.classList.toggle('collapsed');
+      body.classList.toggle('collapsed');
+      if(!body.classList.contains('collapsed'))body.style.maxHeight=body.scrollHeight+'px';
+      else body.style.maxHeight='0';
+    };
+    grpDiv.appendChild(hd);
+
+    // Group body
+    const body=document.createElement('div');
+    body.className='fgrp-body';
+    body.style.maxHeight='2000px';
+
+    members.forEach(({fn,i,color})=>{
+      const fe=fn.replace(/'/g,"\\'");
+      const idx=globalIdx++;
+      const short=fn.length>26?fn.substring(0,24)+'…':fn;
+      const row=document.createElement('div');
+      row.className='ftog-row';
+      row.dataset.fname=fn.toLowerCase();
+      row.style.cssText='flex-wrap:wrap;gap:3px;padding:4px 6px;';
+      row.innerHTML=`
+        <div style="display:flex;align-items:center;gap:6px;width:100%">
+          <div style="width:9px;height:9px;border-radius:2px;background:${color};flex-shrink:0;border:1px solid rgba(255,255,255,.18)"></div>
+          <span class="focus-txt" style="font-family:var(--sans);font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;min-width:0" title="${fn}" onclick="focusFeeder('${fe}')">${short}</span>
+          <div class="tog" id="ftog-${idx}" style="flex-shrink:0" onclick="toggleSingleFeeder('${fe}',${idx},event)"></div>
+        </div>
+        <div style="display:flex;gap:3px;padding-left:15px;margin-top:2px;width:100%">
+          <button class="fi-btn fi-live"      data-feeder="${fe}" onclick="setFeederStatus('${fe}','live',this)">⚡ Live</button>
+          <button class="fi-btn fi-breakdown" data-feeder="${fe}" onclick="setFeederStatus('${fe}','breakdown',this)">🔴 Down</button>
+          <button class="fi-btn fi-idle"      data-feeder="${fe}" onclick="setFeederStatus('${fe}','idle',this)">⏸ Idle</button>
+        </div>`;
+      body.appendChild(row);
+    });
+
+    grpDiv.appendChild(body);
+    container.appendChild(grpDiv);
+  });
+}
+
+function filterFeeders(q){
+  q=q.trim().toLowerCase();
+  document.querySelectorAll('#feederChecks .fgrp').forEach(grpDiv=>{
+    let anyVisible=false;
+    grpDiv.querySelectorAll('.ftog-row').forEach(row=>{
+      const match=!q||row.dataset.fname.includes(q);
+      row.style.display=match?'':'none';
+      if(match)anyVisible=true;
+    });
+    grpDiv.style.display=anyVisible?'':'none';
+    // Auto-expand groups that have matches
+    if(q&&anyVisible){
+      const hd=grpDiv.querySelector('.fgrp-hd');
+      const body=grpDiv.querySelector('.fgrp-body');
+      if(hd&&body&&hd.classList.contains('collapsed')){
+        hd.classList.remove('collapsed');
+        body.classList.remove('collapsed');
+        body.style.maxHeight=body.scrollHeight+'px';
+      }
+    }
   });
 }
 
@@ -1009,6 +1195,211 @@ document.getElementById('srchInput').addEventListener('keydown',e=>{
 });
 
 map.on('mousemove',e=>{document.getElementById('coords').textContent=e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);});
+
+// ══════════════════════════════════════════════════
+// EDIT MODE ENGINE
+// ══════════════════════════════════════════════════
+let editModeActive=false;
+let editTargetItem=null;
+
+// Fields matching CSV columns exactly
+const EDIT_FIELDS=[
+  {key:'feeder_name',         label:'FEEDER NAME'},
+  {key:'Type_of_feeder',      label:'TYPE OF FEEDER'},
+  {key:'latitude',            label:'LATITUDE',  isGeo:true},
+  {key:'longitude',           label:'LONGITUDE', isGeo:true},
+  {key:'pole_number',         label:'POLE NUMBER'},
+  {key:'cut_point',           label:'CUT POINT'},
+  {key:'pole_feeding_to',     label:'POLE FEEDING TO'},
+  {key:'type_of_cable_point', label:'TYPE OF CABLE POINT'},
+  {key:'type_of_feeder',      label:'TYPE (UG / OH)'},
+  {key:'type_of_pole',        label:'TYPE OF POLE'},
+  {key:'section',             label:'SECTION'},
+  {key:'sub_division',        label:'SUB DIVISION'},
+  {key:'division',            label:'DIVISION'},
+];
+
+// In-memory edit store: feederName -> { edited:{id->obj}, deleted:Set }
+const editChanges={};
+function getEditStore(fn){
+  if(!editChanges[fn])editChanges[fn]={edited:{},deleted:new Set()};
+  return editChanges[fn];
+}
+
+// Resolve property value from props with underscore/space fallback
+function resolveProp(props,key){
+  if(props[key]!==undefined&&props[key]!==null)return props[key];
+  const spaced=key.replace(/_/g,' ');
+  if(props[spaced]!==undefined)return props[spaced];
+  const titled=key.replace(/_([a-z])/g,(_,c)=>` ${c.toUpperCase()}`).replace(/^./,s=>s.toUpperCase());
+  if(props[titled]!==undefined)return props[titled];
+  return '';
+}
+
+const POINT_TYPES=['points','cut','ab','dp','fpoles'];
+
+function toggleEditMode(){
+  if(!focusedFeeder)return;
+  editModeActive=!editModeActive;
+  const btn=document.getElementById('etEditBtn');
+  btn.classList.toggle('active',editModeActive);
+  btn.textContent=editModeActive?'✏️ ON':'✏️ EDIT MODE';
+
+  allLayers.forEach(item=>{
+    if(item.feederName!==focusedFeeder)return;
+    if(!POINT_TYPES.includes(item.reg.type))return;
+    const el=item.layer.getElement?.();
+    item.layer.off('click');
+    if(editModeActive){
+      if(el)el.classList.add('edit-mode-point');
+      item.layer.on('click',function(e){L.DomEvent.stopPropagation(e);openEditPanel(item);});
+    }else{
+      if(el)el.classList.remove('edit-mode-point');
+      item.layer.on('click',function(e){L.DomEvent.stopPropagation(e);item.layer.openPopup(e.latlng||item.layer.getLatLng());});
+    }
+  });
+  if(!editModeActive)closeEditPanel();
+  toast(editModeActive?'Edit Mode ON — click any point to edit':'Edit Mode OFF');
+}
+
+function openEditPanel(item){
+  editTargetItem=item;
+  const props=item.layer.feature?.properties||{};
+  const latlng=item.layer.getLatLng?.()??{lat:0,lng:0};
+  const store=getEditStore(item.feederName);
+  const saved=store.edited[item.layer._editId]||{};
+
+  // Pole ID label
+  const poleNum=resolveProp(props,'pole_number')||resolveProp(props,'Pole Number')||'—';
+  document.getElementById('epPoleId').textContent='POLE '+poleNum;
+
+  const body=document.getElementById('editPanelBody');
+  body.innerHTML='';
+
+  EDIT_FIELDS.forEach(f=>{
+    let val='';
+    if(f.isGeo){
+      val=f.key==='latitude'
+        ?(saved.lat!=null?saved.lat:latlng.lat)
+        :(saved.lng!=null?saved.lng:latlng.lng);
+      val=parseFloat(val||0).toFixed(6);
+    }else{
+      val=saved.props?.[f.key]??resolveProp(props,f.key);
+    }
+    const d=document.createElement('div');
+    d.className='ep-field';
+    d.innerHTML=`<label class="ep-label">${f.label}</label>
+      <input class="ep-input" data-key="${f.key}" data-geo="${!!f.isGeo}" value="${String(val).replace(/"/g,'&quot;').replace(/</g,'&lt;')}"/>`;
+    body.appendChild(d);
+  });
+
+  document.getElementById('editPanel').classList.add('open');
+}
+
+function closeEditPanel(){
+  document.getElementById('editPanel').classList.remove('open');
+  editTargetItem=null;
+}
+
+function saveEditPoint(){
+  if(!editTargetItem)return;
+  const item=editTargetItem;
+  const store=getEditStore(item.feederName);
+  const inputs=document.querySelectorAll('#editPanelBody .ep-input');
+  const newProps={};
+  let newLat=null,newLng=null;
+
+  inputs.forEach(inp=>{
+    if(inp.dataset.geo==='true'){
+      if(inp.dataset.key==='latitude')newLat=parseFloat(inp.value)||null;
+      else newLng=parseFloat(inp.value)||null;
+    }else{
+      newProps[inp.dataset.key]=inp.value;
+    }
+  });
+
+  store.edited[item.layer._editId]={props:newProps,lat:newLat,lng:newLng};
+
+  // Update position on map
+  if(newLat&&newLng&&item.layer.setLatLng)item.layer.setLatLng([newLat,newLng]);
+
+  // Update feature properties for popup
+  if(item.layer.feature){
+    Object.assign(item.layer.feature.properties,newProps);
+  }
+
+  closeEditPanel();
+  toast('Point saved ✓',2000);
+}
+
+function deleteEditPoint(){
+  if(!editTargetItem)return;
+  const item=editTargetItem;
+  const store=getEditStore(item.feederName);
+  store.deleted.add(item.layer._editId);
+  item._deleted=true;
+  if(map.hasLayer(item.layer))map.removeLayer(item.layer);
+  if(item.layer.flowLayer&&map.hasLayer(item.layer.flowLayer))map.removeLayer(item.layer.flowLayer);
+  closeEditPanel();
+  toast('Point deleted from map 🗑',2000);
+}
+
+function exitFocusedFeeder(){
+  if(editModeActive){editModeActive=true;toggleEditMode();}
+  closeEditPanel();
+  focusedFeeder=null;
+  allLayers.forEach(i=>{
+    if(i.layer.setStyle&&(i.reg.type==='lines'||i.reg.type==='fsegs')){
+      i.layer.setStyle({opacity:.92});
+      if(i.layer.flowLayer){const cs=feederStatus[i.feederName]||'live';safelyManageClass(i.layer.flowLayer,'hidden-flow',cs!=='live');}
+    }else if(i.layer.setOpacity)i.layer.setOpacity(1);
+  });
+  document.getElementById('editToolbar').classList.remove('visible');
+  toast('Focus cleared');
+}
+
+// ── CSV DOWNLOAD ──────────────────────────────────────
+function downloadFeederCSV(){
+  if(!focusedFeeder){toast('Select a feeder first');return;}
+  const fn=focusedFeeder;
+  const store=editChanges[fn]||{edited:{},deleted:new Set()};
+  const cols=['feeder_name','Type_of_feeder','latitude','longitude','pole_number',
+    'cut_point','pole_feeding_to','type_of_cable_point','type_of_feeder','type_of_pole',
+    'section','sub_division','division'];
+
+  function csvCell(v){
+    v=String(v??'');
+    if(v.includes(',')||v.includes('"')||v.includes('\n'))v='"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }
+
+  const rows=[cols.join(',')];
+
+  allLayers.forEach(item=>{
+    if(item.feederName!==fn)return;
+    if(!POINT_TYPES.includes(item.reg.type))return;
+    if(item._deleted||store.deleted.has(item.layer._editId))return;
+
+    const saved=store.edited[item.layer._editId]||{};
+    const props=item.layer.feature?.properties||{};
+    const latlng=item.layer.getLatLng?.()??{lat:'',lng:''};
+
+    const row=cols.map(c=>{
+      if(c==='latitude') return csvCell(saved.lat!=null?saved.lat:latlng.lat);
+      if(c==='longitude')return csvCell(saved.lng!=null?saved.lng:latlng.lng);
+      const v=saved.props?.[c]??resolveProp(props,c);
+      return csvCell(v);
+    });
+    rows.push(row.join(','));
+  });
+
+  const blob=new Blob(['\uFEFF'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_edited.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  toast(`Downloaded ${rows.length-1} points as CSV ⬇️`,3000);
+}
 
 let _tt;
 function toast(msg,dur=2200){
