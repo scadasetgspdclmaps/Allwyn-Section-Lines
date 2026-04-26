@@ -442,13 +442,36 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 .ep-body{flex:1;overflow-y:auto;padding:12px 14px}
 .ep-body::-webkit-scrollbar{width:3px}
 .ep-body::-webkit-scrollbar-thumb{background:rgba(0,200,255,.2);border-radius:3px}
-.ep-field{margin-bottom:10px}
-.ep-label{font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.55);
+.ep-field{margin-bottom:11px}
+.ep-label{font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.5);
   letter-spacing:1.5px;margin-bottom:4px;display:block}
-.ep-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(0,200,255,.15);
-  border-radius:6px;padding:7px 10px;color:var(--text);font-family:var(--sans);
-  font-size:12px;outline:none;transition:border-color .2s,background .2s}
-.ep-input:focus{border-color:var(--live);background:rgba(0,200,255,.07);color:#fff}
+
+/* read-only display */
+.ep-readonly{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:6px;padding:7px 10px;color:rgba(176,204,224,.45);font-family:var(--sans);
+  font-size:12px;min-height:32px;font-style:italic;letter-spacing:.2px}
+
+/* shared input base */
+.ep-input,.ep-select{width:100%;background:rgba(255,255,255,.05);
+  border:1px solid rgba(0,200,255,.15);border-radius:6px;padding:7px 10px;
+  color:var(--text);font-family:var(--sans);font-size:12px;outline:none;
+  transition:border-color .2s,background .2s;box-sizing:border-box}
+.ep-input:focus,.ep-select:focus{border-color:var(--live);background:rgba(0,200,255,.07);color:#fff}
+
+/* dropdown arrow */
+.ep-select{appearance:none;cursor:pointer;padding-right:28px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2300c8ff'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  background-color:rgba(255,255,255,.05)}
+.ep-select option{background:#0d1b2a;color:#b0cce0}
+
+/* lat/lng geo row */
+.ep-geo-wrap{display:flex;align-items:center;gap:6px}
+.ep-geo-input{flex:1}
+.ep-drag-pin{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,200,255,.25);
+  background:rgba(0,200,255,.1);display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:default;flex-shrink:0;opacity:.7;transition:.2s}
+.ep-drag-pin:hover{opacity:1;background:rgba(0,200,255,.2)}
 .ep-foot{padding:12px 14px;border-top:1px solid rgba(0,200,255,.1);
   display:flex;gap:8px;flex-shrink:0}
 .ep-btn{flex:1;padding:9px 6px;border:none;border-radius:7px;cursor:pointer;
@@ -1197,54 +1220,99 @@ document.getElementById('srchInput').addEventListener('keydown',e=>{
 map.on('mousemove',e=>{document.getElementById('coords').textContent=e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);});
 
 // ══════════════════════════════════════════════════
-// EDIT MODE ENGINE
+// EDIT MODE ENGINE v2
 // ══════════════════════════════════════════════════
 let editModeActive=false;
 let editTargetItem=null;
+let dragMarker=null;
 
-// Fields matching CSV columns exactly
+// Field definitions
+// key     = GeoJSON property name (space-separated, as used in data files)
+// csvKey  = CSV column name (underscore)
+// readOnly= auto-filled from feeder, not editable
+// dropdown= render as <select> with discovered options
+// isGeo   = lat/lng: text input + drag marker
 const EDIT_FIELDS=[
-  {key:'feeder_name',         label:'FEEDER NAME'},
-  {key:'Type_of_feeder',      label:'TYPE OF FEEDER'},
-  {key:'latitude',            label:'LATITUDE',  isGeo:true},
-  {key:'longitude',           label:'LONGITUDE', isGeo:true},
-  {key:'pole_number',         label:'POLE NUMBER'},
-  {key:'cut_point',           label:'CUT POINT'},
-  {key:'pole_feeding_to',     label:'POLE FEEDING TO'},
-  {key:'type_of_cable_point', label:'TYPE OF CABLE POINT'},
-  {key:'type_of_feeder',      label:'TYPE (UG / OH)'},
-  {key:'type_of_pole',        label:'TYPE OF POLE'},
-  {key:'section',             label:'SECTION'},
-  {key:'sub_division',        label:'SUB DIVISION'},
-  {key:'division',            label:'DIVISION'},
+  {key:'Feeder Name',         csvKey:'feeder_name',          label:'FEEDER NAME',          readOnly:true  },
+  {key:'Type of Feeder',      csvKey:'Type_of_feeder',       label:'TYPE OF FEEDER',       dropdown:true  },
+  {key:'latitude',            csvKey:'latitude',             label:'LATITUDE',             isGeo:true     },
+  {key:'longitude',           csvKey:'longitude',            label:'LONGITUDE',            isGeo:true     },
+  {key:'Pole Number',         csvKey:'pole_number',          label:'POLE NUMBER'                          },
+  {key:'Cut Point',           csvKey:'cut_point',            label:'CUT POINT',            dropdown:true  },
+  {key:'Pole Feeding To',     csvKey:'pole_feeding_to',      label:'POLE FEEDING TO',      dropdown:true  },
+  {key:'Type of Cable Point', csvKey:'type_of_cable_point',  label:'TYPE OF CABLE POINT',  dropdown:true  },
+  {key:'type of feeder',      csvKey:'type_of_feeder',       label:'TYPE  (UG / OH)',      dropdown:true  },
+  {key:'Type of Pole',        csvKey:'type_of_pole',         label:'TYPE OF POLE',         dropdown:true  },
+  {key:'Section',             csvKey:'section',              label:'SECTION',              readOnly:true  },
+  {key:'Sub Division',        csvKey:'sub_division',         label:'SUB DIVISION',         readOnly:true  },
+  {key:'Division',            csvKey:'division',             label:'DIVISION',             readOnly:true  },
 ];
 
-// In-memory edit store: feederName -> { edited:{id->obj}, deleted:Set }
+const CSV_COLS=['feeder_name','Type_of_feeder','latitude','longitude','pole_number',
+  'cut_point','pole_feeding_to','type_of_cable_point','type_of_feeder','type_of_pole',
+  'section','sub_division','division'];
+
+const POINT_TYPES=['points','cut','ab','dp','fpoles'];
+
+// In-memory edit store
 const editChanges={};
 function getEditStore(fn){
   if(!editChanges[fn])editChanges[fn]={edited:{},deleted:new Set()};
   return editChanges[fn];
 }
 
-// Resolve property value from props with underscore/space fallback
+// ── Property resolver: tries key variants in priority order ──
 function resolveProp(props,key){
-  if(props[key]!==undefined&&props[key]!==null)return props[key];
-  const spaced=key.replace(/_/g,' ');
-  if(props[spaced]!==undefined)return props[spaced];
-  const titled=key.replace(/_([a-z])/g,(_,c)=>` ${c.toUpperCase()}`).replace(/^./,s=>s.toUpperCase());
-  if(props[titled]!==undefined)return props[titled];
-  return '';
+  if(!props||key===null||key===undefined)return'';
+  const tries=[
+    key,
+    key.replace(/ /g,'_'),
+    key.toLowerCase(),
+    key.toLowerCase().replace(/ /g,'_'),
+    key.replace(/\b\w/g,c=>c.toUpperCase()),
+    key.replace(/\b\w/g,c=>c.toUpperCase()).replace(/ /g,'_'),
+  ];
+  for(const t of tries){if(t in props&&props[t]!==null&&props[t]!==undefined)return props[t];}
+  // Normalized case-insensitive fallback
+  const norm=key.toLowerCase().replace(/[_ ]/g,'');
+  for(const k of Object.keys(props)){
+    if(k.toLowerCase().replace(/[_ ]/g,'')===norm&&props[k]!==null&&props[k]!==undefined)return props[k];
+  }
+  return'';
 }
 
-const POINT_TYPES=['points','cut','ab','dp','fpoles'];
+// ── Dropdown option store (built from all loaded features) ──
+const dropdownOptions={};
 
+function buildDropdownOptions(){
+  const sets={};
+  const dKeys=EDIT_FIELDS.filter(f=>f.dropdown).map(f=>f.key);
+  allLayers.forEach(item=>{
+    if(!POINT_TYPES.includes(item.reg.type))return;
+    const props=item.layer.feature?.properties||{};
+    dKeys.forEach(key=>{
+      const val=resolveProp(props,key);
+      if(val===null||val===undefined||String(val).trim()==='')return;
+      if(!sets[key])sets[key]=new Set();
+      sets[key].add(String(val).trim());
+    });
+  });
+  dKeys.forEach(key=>{
+    if(!sets[key]){dropdownOptions[key]=[];return;}
+    const arr=[...sets[key]].filter(Boolean);
+    // Sort: numeric if all numeric, else alpha
+    const allNum=arr.every(v=>!isNaN(v)&&v!=='');
+    dropdownOptions[key]=arr.sort(allNum?(a,b)=>Number(a)-Number(b):(a,b)=>a.localeCompare(b));
+  });
+}
+
+// ── toggleEditMode ──
 function toggleEditMode(){
   if(!focusedFeeder)return;
   editModeActive=!editModeActive;
   const btn=document.getElementById('etEditBtn');
   btn.classList.toggle('active',editModeActive);
   btn.textContent=editModeActive?'✏️ ON':'✏️ EDIT MODE';
-
   allLayers.forEach(item=>{
     if(item.feederName!==focusedFeeder)return;
     if(!POINT_TYPES.includes(item.reg.type))return;
@@ -1262,76 +1330,139 @@ function toggleEditMode(){
   toast(editModeActive?'Edit Mode ON — click any point to edit':'Edit Mode OFF');
 }
 
+// ── openEditPanel ──
 function openEditPanel(item){
+  if(dragMarker){map.removeLayer(dragMarker);dragMarker=null;}
   editTargetItem=item;
   const props=item.layer.feature?.properties||{};
   const latlng=item.layer.getLatLng?.()??{lat:0,lng:0};
   const store=getEditStore(item.feederName);
   const saved=store.edited[item.layer._editId]||{};
 
-  // Pole ID label
-  const poleNum=resolveProp(props,'pole_number')||resolveProp(props,'Pole Number')||'—';
+  // Header pole ID
+  const poleNum=resolveProp(props,'Pole Number')||resolveProp(props,'pole_number')||'—';
   document.getElementById('epPoleId').textContent='POLE '+poleNum;
 
   const body=document.getElementById('editPanelBody');
   body.innerHTML='';
 
   EDIT_FIELDS.forEach(f=>{
-    let val='';
+    // Determine current value
+    let curVal='';
     if(f.isGeo){
-      val=f.key==='latitude'
+      curVal=f.key==='latitude'
         ?(saved.lat!=null?saved.lat:latlng.lat)
         :(saved.lng!=null?saved.lng:latlng.lng);
-      val=parseFloat(val||0).toFixed(6);
+      curVal=parseFloat(curVal||0).toFixed(6);
+    }else if(f.readOnly){
+      // Auto-fill: feeder name from focused feeder; others from first matching prop
+      if(f.key==='Feeder Name')curVal=item.feederName||'';
+      else curVal=saved.props?.[f.csvKey]??resolveProp(props,f.key);
     }else{
-      val=saved.props?.[f.key]??resolveProp(props,f.key);
+      curVal=saved.props?.[f.csvKey]??resolveProp(props,f.key);
     }
+    const safeVal=String(curVal??'');
+
     const d=document.createElement('div');
     d.className='ep-field';
-    d.innerHTML=`<label class="ep-label">${f.label}</label>
-      <input class="ep-input" data-key="${f.key}" data-geo="${!!f.isGeo}" value="${String(val).replace(/"/g,'&quot;').replace(/</g,'&lt;')}"/>`;
+
+    let inner=`<label class="ep-label">${f.label}</label>`;
+
+    if(f.readOnly){
+      inner+=`<div class="ep-readonly">${safeVal||'—'}</div>`;
+    }else if(f.isGeo){
+      inner+=`<div class="ep-geo-wrap">
+        <input class="ep-input ep-geo-input" type="number" step="0.000001"
+          data-key="${f.key}" data-geo="true" data-csvkey="${f.csvKey}" value="${safeVal}"/>
+        <div class="ep-drag-pin" title="Drag the 🔵 marker on the map">📍</div>
+      </div>`;
+    }else if(f.dropdown){
+      const opts=dropdownOptions[f.key]||[];
+      const trimVal=safeVal.trim();
+      const hasVal=trimVal!=='';
+      const inList=opts.some(o=>o===trimVal);
+      inner+=`<select class="ep-select" data-key="${f.key}" data-csvkey="${f.csvKey}">
+        <option value="">— select —</option>
+        ${opts.map(o=>`<option value="${escH(o)}"${o===trimVal?' selected':''}>${o}</option>`).join('')}
+        ${hasVal&&!inList?`<option value="${escH(trimVal)}" selected>${trimVal}</option>`:''}
+      </select>`;
+    }else{
+      // Plain text input (e.g. Pole Number)
+      inner+=`<input class="ep-input" type="text"
+        data-key="${f.key}" data-csvkey="${f.csvKey}" value="${escH(safeVal)}"/>`;
+    }
+
+    d.innerHTML=inner;
     body.appendChild(d);
   });
 
   document.getElementById('editPanel').classList.add('open');
+
+  // ── Draggable reposition marker ──
+  const dIcon=L.divIcon({
+    className:'',
+    html:`<div style="width:22px;height:22px;border-radius:50%;
+      background:rgba(0,200,255,.22);border:2.5px solid #00c8ff;
+      box-shadow:0 0 14px rgba(0,200,255,.8);box-sizing:border-box;cursor:move"></div>`,
+    iconSize:[22,22],iconAnchor:[11,11]
+  });
+  dragMarker=L.marker([latlng.lat,latlng.lng],{draggable:true,zIndexOffset:3000,icon:dIcon}).addTo(map);
+
+  dragMarker.on('drag',function(e){
+    const ll=e.target.getLatLng();
+    const li=document.querySelector('#editPanelBody [data-key="latitude"]');
+    const lo=document.querySelector('#editPanelBody [data-key="longitude"]');
+    if(li)li.value=ll.lat.toFixed(6);
+    if(lo)lo.value=ll.lng.toFixed(6);
+  });
+
+  // Sync text inputs → drag marker
+  setTimeout(()=>{
+    document.querySelectorAll('#editPanelBody .ep-geo-input').forEach(inp=>{
+      inp.addEventListener('input',()=>{
+        const lat=parseFloat(document.querySelector('#editPanelBody [data-key="latitude"]')?.value);
+        const lng=parseFloat(document.querySelector('#editPanelBody [data-key="longitude"]')?.value);
+        if(!isNaN(lat)&&!isNaN(lng)&&dragMarker)dragMarker.setLatLng([lat,lng]);
+      });
+    });
+  },30);
 }
 
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+// ── closeEditPanel ──
 function closeEditPanel(){
+  if(dragMarker){map.removeLayer(dragMarker);dragMarker=null;}
   document.getElementById('editPanel').classList.remove('open');
   editTargetItem=null;
 }
 
+// ── saveEditPoint ──
 function saveEditPoint(){
   if(!editTargetItem)return;
   const item=editTargetItem;
   const store=getEditStore(item.feederName);
-  const inputs=document.querySelectorAll('#editPanelBody .ep-input');
   const newProps={};
   let newLat=null,newLng=null;
 
-  inputs.forEach(inp=>{
-    if(inp.dataset.geo==='true'){
-      if(inp.dataset.key==='latitude')newLat=parseFloat(inp.value)||null;
-      else newLng=parseFloat(inp.value)||null;
+  document.querySelectorAll('#editPanelBody input[data-csvkey],#editPanelBody select[data-csvkey]').forEach(el=>{
+    const csvk=el.dataset.csvkey;
+    if(el.dataset.geo==='true'){
+      if(el.dataset.key==='latitude')newLat=parseFloat(el.value)||null;
+      else newLng=parseFloat(el.value)||null;
     }else{
-      newProps[inp.dataset.key]=inp.value;
+      newProps[csvk]=el.value;
     }
   });
 
   store.edited[item.layer._editId]={props:newProps,lat:newLat,lng:newLng};
-
-  // Update position on map
   if(newLat&&newLng&&item.layer.setLatLng)item.layer.setLatLng([newLat,newLng]);
-
-  // Update feature properties for popup
-  if(item.layer.feature){
-    Object.assign(item.layer.feature.properties,newProps);
-  }
-
+  if(item.layer.feature)Object.assign(item.layer.feature.properties,newProps);
   closeEditPanel();
   toast('Point saved ✓',2000);
 }
 
+// ── deleteEditPoint ──
 function deleteEditPoint(){
   if(!editTargetItem)return;
   const item=editTargetItem;
@@ -1341,9 +1472,10 @@ function deleteEditPoint(){
   if(map.hasLayer(item.layer))map.removeLayer(item.layer);
   if(item.layer.flowLayer&&map.hasLayer(item.layer.flowLayer))map.removeLayer(item.layer.flowLayer);
   closeEditPanel();
-  toast('Point deleted from map 🗑',2000);
+  toast('Point deleted 🗑',2000);
 }
 
+// ── exitFocusedFeeder ──
 function exitFocusedFeeder(){
   if(editModeActive){editModeActive=true;toggleEditMode();}
   closeEditPanel();
@@ -1358,14 +1490,11 @@ function exitFocusedFeeder(){
   toast('Focus cleared');
 }
 
-// ── CSV DOWNLOAD ──────────────────────────────────────
+// ── CSV DOWNLOAD ──
 function downloadFeederCSV(){
   if(!focusedFeeder){toast('Select a feeder first');return;}
   const fn=focusedFeeder;
   const store=editChanges[fn]||{edited:{},deleted:new Set()};
-  const cols=['feeder_name','Type_of_feeder','latitude','longitude','pole_number',
-    'cut_point','pole_feeding_to','type_of_cable_point','type_of_feeder','type_of_pole',
-    'section','sub_division','division'];
 
   function csvCell(v){
     v=String(v??'');
@@ -1373,21 +1502,20 @@ function downloadFeederCSV(){
     return v;
   }
 
-  const rows=[cols.join(',')];
+  const rows=[CSV_COLS.join(',')];
 
   allLayers.forEach(item=>{
     if(item.feederName!==fn)return;
     if(!POINT_TYPES.includes(item.reg.type))return;
     if(item._deleted||store.deleted.has(item.layer._editId))return;
-
     const saved=store.edited[item.layer._editId]||{};
     const props=item.layer.feature?.properties||{};
     const latlng=item.layer.getLatLng?.()??{lat:'',lng:''};
-
-    const row=cols.map(c=>{
-      if(c==='latitude') return csvCell(saved.lat!=null?saved.lat:latlng.lat);
-      if(c==='longitude')return csvCell(saved.lng!=null?saved.lng:latlng.lng);
-      const v=saved.props?.[c]??resolveProp(props,c);
+    const row=CSV_COLS.map(csvk=>{
+      if(csvk==='latitude')return csvCell(saved.lat!=null?saved.lat:latlng.lat);
+      if(csvk==='longitude')return csvCell(saved.lng!=null?saved.lng:latlng.lng);
+      const field=EDIT_FIELDS.find(f=>f.csvKey===csvk);
+      const v=saved.props?.[csvk]??resolveProp(props,field?.key||csvk);
       return csvCell(v);
     });
     rows.push(row.join(','));
@@ -1398,7 +1526,7 @@ function downloadFeederCSV(){
   a.href=URL.createObjectURL(blob);
   a.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_edited.csv';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast(`Downloaded ${rows.length-1} points as CSV ⬇️`,3000);
+  toast(`Downloaded ${rows.length-1} points ⬇️`,3000);
 }
 
 let _tt;
@@ -1458,7 +1586,7 @@ function dismissLoader(){
 }
 
 setTimeout(()=>{
-  dismissLoader();buildFeederChecks();updateCounts();
+  dismissLoader();buildFeederChecks();updateCounts();buildDropdownOptions();
   (window.requestIdleCallback||setTimeout)(()=>{requestVisibilityUpdate();syncLabels();},{timeout:500});
   toast('Allwyn 33KV section loaded — '+allLayers.length+' features',3000);
 },600);
