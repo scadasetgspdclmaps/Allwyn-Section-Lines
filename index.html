@@ -9,6 +9,7 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.2.0/Leaflet.Editable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
 <!-- ══ ALLWYN SECTION DATA FILES ══ -->
@@ -519,6 +520,18 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 
 /* ══ EDIT MODE marker highlight ══ */
 .edit-mode-point{filter:drop-shadow(0 0 7px rgba(0,200,255,.9))!important;cursor:crosshair!important;transition:filter .2s}
+
+/* ══ LINE EDIT MODE ══ */
+.line-edit-active path{cursor:crosshair!important}
+.et-line-on{background:rgba(255,152,0,.28)!important;color:#fff!important;
+  border-color:rgba(255,152,0,.6)!important;box-shadow:0 0 8px rgba(255,152,0,.3)!important}
+
+/* Leaflet.Editable vertex handle override */
+.leaflet-vertex-icon{background:#ff9800!important;border:2px solid #fff!important;
+  border-radius:50%!important;width:12px!important;height:12px!important;
+  box-shadow:0 0 8px rgba(255,152,0,.8)!important}
+.leaflet-middle-icon{background:rgba(255,152,0,.4)!important;border:1px dashed #ff9800!important;
+  border-radius:50%!important;width:8px!important;height:8px!important}
 </style>
 </head>
 <body>
@@ -601,6 +614,8 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
   <span class="et-label" id="etFeederLabel">—</span>
   <div class="et-sep"></div>
   <button class="et-btn et-edit" id="etEditBtn" onclick="toggleEditMode()">✏️ EDIT MODE</button>
+  <button class="et-btn" id="etLineBtn" onclick="toggleLineEditMode()"
+    style="background:rgba(255,152,0,.1);color:#ff9800;border:1px solid rgba(255,152,0,.25)">〰️ LINES</button>
   <button class="et-btn et-download" onclick="downloadFeederCSV()">⬇️ CSV</button>
   <button class="et-btn et-exit" onclick="exitFocusedFeeder()">✕ EXIT</button>
 </div>
@@ -665,7 +680,7 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 // ══════════════════════════════════════════════════
 const map = L.map('map',{
   center:[17.4855,78.5122], zoom:14, zoomControl:false,
-  preferCanvas:false,
+  preferCanvas:false, editable:true,
   zoomAnimation:true, zoomAnimationThreshold:4,
   fadeAnimation:true, markerZoomAnimation:true,
   inertia:true, inertiaDeceleration:2800, inertiaMaxSpeed:Infinity,
@@ -1635,7 +1650,24 @@ function downloadFeederCSV(){
   a.href=URL.createObjectURL(blob);
   a.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_edited.csv';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast(`Downloaded ${rows.length-1} points ⬇️`,3000);
+
+  // Also export line vertex changes if any
+  const lineRecs=(lineEdits[fn]||[]).filter(r=>r.editedLatLngs);
+  if(lineRecs.length){
+    const lineRows=['segment_index,vertex_index,latitude,longitude'];
+    lineRecs.forEach((rec,si)=>{
+      rec.editedLatLngs.forEach((ll,vi)=>{
+        lineRows.push(`${si},${vi},${ll.lat},${ll.lng}`);
+      });
+    });
+    const lb=new Blob(['\uFEFF'+lineRows.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    const la=document.createElement('a');
+    la.href=URL.createObjectURL(lb);
+    la.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_lines_edited.csv';
+    document.body.appendChild(la);la.click();document.body.removeChild(la);
+  }
+
+  toast(`Downloaded ${rows.length-1} points${lineRecs.length?' + '+lineRecs.length+' line edits':''} ⬇️`,3000);
 }
 
 let _tt;
@@ -1717,6 +1749,95 @@ function syncLabels(){
 }
 map.on('zoomend',syncLabels);
 document.getElementById('loader').addEventListener('click',dismissLoader);
+
+// ══════════════════════════════════════════════════
+// LINE EDIT MODE ENGINE
+// ══════════════════════════════════════════════════
+let lineEditModeActive=false;
+const lineEdits={};  // feederName -> [ {layer, originalLatLngs, editedLatLngs} ]
+const activeEditingLayers=new Set();
+
+function toggleLineEditMode(){
+  if(!focusedFeeder)return;
+  lineEditModeActive=!lineEditModeActive;
+  const btn=document.getElementById('etLineBtn');
+
+  if(lineEditModeActive){
+    btn.classList.add('et-line-on');
+    btn.textContent='〰️ ON';
+    enableLineEditing();
+    toast('Line Edit ON — click any line to edit vertices 〰️');
+  }else{
+    btn.classList.remove('et-line-on');
+    btn.textContent='〰️ LINES';
+    disableLineEditing();
+    toast('Line Edit OFF — vertex changes saved');
+  }
+}
+
+function enableLineEditing(){
+  const fn=focusedFeeder;
+  allLayers.forEach(item=>{
+    if(item.feederName!==fn)return;
+    if(item.reg.type!=='lines'&&item.reg.type!=='fsegs')return;
+    if(!map.hasLayer(item.layer))return;
+    if(typeof item.layer.enableEdit!=='function')return;
+
+    // Store original latlngs before editing
+    if(!lineEdits[fn])lineEdits[fn]=[];
+    const existing=lineEdits[fn].find(e=>e.layer===item.layer);
+    if(!existing){
+      lineEdits[fn].push({
+        layer:item.layer,
+        feederName:fn,
+        originalLatLngs:item.layer.getLatLngs().map(ll=>({lat:ll.lat,lng:ll.lng})),
+        editedLatLngs:null
+      });
+    }
+
+    item.layer.enableEdit();
+    activeEditingLayers.add(item.layer);
+
+    // Highlight line while editable
+    item.layer.setStyle&&item.layer.setStyle({
+      color:'#ff9800', weight:4, opacity:1, dashArray:'6,4'
+    });
+
+    // Save edits on vertex move
+    item.layer.on('editable:vertex:dragend editable:vertex:deleted',function(){
+      const rec=lineEdits[fn].find(e=>e.layer===item.layer);
+      if(rec)rec.editedLatLngs=item.layer.getLatLngs().map(ll=>({lat:ll.lat,lng:ll.lng}));
+    });
+  });
+}
+
+function disableLineEditing(){
+  const fn=focusedFeeder;
+  activeEditingLayers.forEach(layer=>{
+    if(typeof layer.disableEdit==='function')layer.disableEdit();
+    // Restore original line style based on feeder status
+    const item=allLayers.find(i=>i.layer===layer);
+    if(item){
+      const cs=feederStatus[item.feederName]||'live';
+      const isUG=item.cable==='UG';
+      const color=cs==='breakdown'?'#ff1744':cs==='idle'?'rgba(176,204,224,.25)':isUG?'#00c8ff':'#ff4444';
+      layer.setStyle&&layer.setStyle({color,weight:isUG?2.5:2,opacity:.92,dashArray:isUG?null:'6,4'});
+    }
+  });
+  activeEditingLayers.clear();
+}
+
+// Also disable line editing when exitFocusedFeeder is called
+const _origExit=exitFocusedFeeder;
+exitFocusedFeeder=function(){
+  if(lineEditModeActive){
+    lineEditModeActive=true;
+    toggleLineEditMode();
+  }
+  _origExit();
+  const btn=document.getElementById('etLineBtn');
+  if(btn){btn.classList.remove('et-line-on');btn.textContent='〰️ LINES';}
+};
 </script>
 </body>
 </html>
