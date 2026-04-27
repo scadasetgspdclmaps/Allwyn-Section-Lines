@@ -472,6 +472,22 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
   background:rgba(0,200,255,.1);display:flex;align-items:center;justify-content:center;
   font-size:13px;cursor:default;flex-shrink:0;opacity:.7;transition:.2s}
 .ep-drag-pin:hover{opacity:1;background:rgba(0,200,255,.2)}
+
+/* Pick-on-map button */
+.ep-pick-btn{padding:5px 10px;border-radius:6px;border:1px solid rgba(0,200,255,.3);
+  background:rgba(0,200,255,.1);color:var(--live);font-family:var(--mono);font-size:9px;
+  letter-spacing:.8px;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.ep-pick-btn:hover{background:rgba(0,200,255,.22);color:#fff}
+.ep-pick-btn.picking{background:rgba(255,171,0,.2);border-color:rgba(255,171,0,.5);
+  color:#ffab00;animation:pickPulse 1s ease-in-out infinite}
+@keyframes pickPulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* Pick mode map banner */
+#pickBanner{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1100;
+  background:rgba(255,171,0,.95);color:#000;font-family:var(--mono);font-size:11px;
+  letter-spacing:1px;padding:8px 20px;border-radius:20px;pointer-events:none;
+  display:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+#pickBanner.active{display:block}
 .ep-foot{padding:12px 14px;border-top:1px solid rgba(0,200,255,.1);
   display:flex;gap:8px;flex-shrink:0}
 .ep-btn{flex:1;padding:9px 6px;border:none;border-radius:7px;cursor:pointer;
@@ -562,6 +578,9 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 </div>
 
 <div id="toast"></div>
+
+<!-- ══ PICK ON MAP BANNER ══ -->
+<div id="pickBanner">📍 Click on map to set new location — Esc to cancel</div>
 
 <!-- ══ EDIT PANEL (right slide-in) ══ -->
 <div id="editPanel">
@@ -1387,7 +1406,6 @@ function openEditPanel(item){
       inner+=`<div class="ep-geo-wrap">
         <input class="ep-input ep-geo-input" type="number" step="0.000001"
           data-key="${f.key}" data-geo="true" data-csvkey="${f.csvKey}" value="${safeVal}"/>
-        <div class="ep-drag-pin" title="Drag the 🔵 marker on the map">📍</div>
       </div>`;
     }else if(f.dropdown){
       const opts=dropdownOptions[f.key]||[];
@@ -1408,6 +1426,22 @@ function openEditPanel(item){
     d.innerHTML=inner;
     body.appendChild(d);
   });
+
+  // ── Pick on Map button (appears below lat/lng fields) ──
+  const pickWrap=document.createElement('div');
+  pickWrap.style.cssText='padding:0 0 10px;display:flex;gap:8px;align-items:center';
+  pickWrap.innerHTML=`
+    <button class="ep-pick-btn" id="pickMapBtn" onclick="startPickMode()">📍 PICK ON MAP</button>
+    <span style="font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.35);letter-spacing:.5px">
+      or drag the blue marker
+    </span>`;
+  // Insert after the longitude field (2nd geo field)
+  const geoFields=body.querySelectorAll('.ep-geo-wrap');
+  if(geoFields.length>=2){
+    geoFields[1].closest('.ep-field').insertAdjacentElement('afterend',pickWrap);
+  }else{
+    body.insertBefore(pickWrap,body.firstChild);
+  }
 
   document.getElementById('editPanel').classList.add('open');
 
@@ -1441,10 +1475,72 @@ function openEditPanel(item){
   },30);
 }
 
+// ── Pick-on-map mode ──
+let pickModeActive=false;
+let _pickMapClickHandler=null;
+let _pickEscHandler=null;
+
+function startPickMode(){
+  if(pickModeActive)return cancelPickMode();
+  pickModeActive=true;
+
+  const btn=document.getElementById('pickMapBtn');
+  if(btn)btn.classList.add('picking');
+  document.getElementById('pickBanner').classList.add('active');
+  map.getContainer().style.cursor='crosshair';
+
+  // One-shot map click handler
+  _pickMapClickHandler=function(e){
+    const lat=e.latlng.lat;
+    const lng=e.latlng.lng;
+
+    // Update inputs
+    const li=document.querySelector('#editPanelBody [data-key="latitude"]');
+    const lo=document.querySelector('#editPanelBody [data-key="longitude"]');
+    if(li)li.value=lat.toFixed(6);
+    if(lo)lo.value=lng.toFixed(6);
+
+    // Move drag marker
+    if(dragMarker)dragMarker.setLatLng([lat,lng]);
+    else if(editTargetItem){
+      // Recreate if missing
+      const dIcon=L.divIcon({
+        className:'',
+        html:`<div style="width:22px;height:22px;border-radius:50%;
+          background:rgba(0,200,255,.22);border:2.5px solid #00c8ff;
+          box-shadow:0 0 14px rgba(0,200,255,.8);box-sizing:border-box"></div>`,
+        iconSize:[22,22],iconAnchor:[11,11]
+      });
+      dragMarker=L.marker([lat,lng],{draggable:true,zIndexOffset:3000,icon:dIcon}).addTo(map);
+    }
+
+    cancelPickMode();
+  };
+
+  // Esc key cancels
+  _pickEscHandler=function(e){
+    if(e.key==='Escape')cancelPickMode();
+  };
+
+  map.once('click',_pickMapClickHandler);
+  document.addEventListener('keydown',_pickEscHandler);
+}
+
+function cancelPickMode(){
+  pickModeActive=false;
+  const btn=document.getElementById('pickMapBtn');
+  if(btn)btn.classList.remove('picking');
+  document.getElementById('pickBanner').classList.remove('active');
+  map.getContainer().style.cursor='';
+  if(_pickMapClickHandler){map.off('click',_pickMapClickHandler);_pickMapClickHandler=null;}
+  if(_pickEscHandler){document.removeEventListener('keydown',_pickEscHandler);_pickEscHandler=null;}
+}
+
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 
 // ── closeEditPanel ──
 function closeEditPanel(){
+  cancelPickMode();
   if(dragMarker){map.removeLayer(dragMarker);dragMarker=null;}
   document.getElementById('editPanel').classList.remove('open');
   editTargetItem=null;
