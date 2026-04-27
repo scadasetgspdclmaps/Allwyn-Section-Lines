@@ -9,7 +9,6 @@
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.2.0/Leaflet.Editable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
 <!-- ══ ALLWYN SECTION DATA FILES ══ -->
@@ -469,25 +468,22 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 /* lat/lng geo row */
 .ep-geo-wrap{display:flex;align-items:center;gap:6px}
 .ep-geo-input{flex:1}
-.ep-drag-pin{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,200,255,.25);
-  background:rgba(0,200,255,.1);display:flex;align-items:center;justify-content:center;
-  font-size:13px;cursor:default;flex-shrink:0;opacity:.7;transition:.2s}
-.ep-drag-pin:hover{opacity:1;background:rgba(0,200,255,.2)}
 
 /* Pick-on-map button */
-.ep-pick-btn{padding:5px 10px;border-radius:6px;border:1px solid rgba(0,200,255,.3);
+.ep-pick-btn{padding:6px 12px;border-radius:6px;border:1px solid rgba(0,200,255,.3);
   background:rgba(0,200,255,.1);color:var(--live);font-family:var(--mono);font-size:9px;
-  letter-spacing:.8px;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+  letter-spacing:.8px;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0;display:block;
+  width:100%;margin-top:6px;margin-bottom:2px;text-align:center}
 .ep-pick-btn:hover{background:rgba(0,200,255,.22);color:#fff}
-.ep-pick-btn.picking{background:rgba(255,171,0,.2);border-color:rgba(255,171,0,.5);
+.ep-pick-btn.picking{background:rgba(255,171,0,.18);border-color:rgba(255,171,0,.55);
   color:#ffab00;animation:pickPulse 1s ease-in-out infinite}
-@keyframes pickPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes pickPulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* Pick mode map banner */
-#pickBanner{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:1100;
+#pickBanner{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:1100;
   background:rgba(255,171,0,.95);color:#000;font-family:var(--mono);font-size:11px;
-  letter-spacing:1px;padding:8px 20px;border-radius:20px;pointer-events:none;
-  display:none;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+  letter-spacing:1px;padding:8px 22px;border-radius:20px;pointer-events:none;
+  display:none;box-shadow:0 4px 20px rgba(0,0,0,.45)}
 #pickBanner.active{display:block}
 .ep-foot{padding:12px 14px;border-top:1px solid rgba(0,200,255,.1);
   display:flex;gap:8px;flex-shrink:0}
@@ -520,18 +516,6 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 
 /* ══ EDIT MODE marker highlight ══ */
 .edit-mode-point{filter:drop-shadow(0 0 7px rgba(0,200,255,.9))!important;cursor:crosshair!important;transition:filter .2s}
-
-/* ══ LINE EDIT MODE ══ */
-.line-edit-active path{cursor:crosshair!important}
-.et-line-on{background:rgba(255,152,0,.28)!important;color:#fff!important;
-  border-color:rgba(255,152,0,.6)!important;box-shadow:0 0 8px rgba(255,152,0,.3)!important}
-
-/* Leaflet.Editable vertex handle override */
-.leaflet-vertex-icon{background:#ff9800!important;border:2px solid #fff!important;
-  border-radius:50%!important;width:12px!important;height:12px!important;
-  box-shadow:0 0 8px rgba(255,152,0,.8)!important}
-.leaflet-middle-icon{background:rgba(255,152,0,.4)!important;border:1px dashed #ff9800!important;
-  border-radius:50%!important;width:8px!important;height:8px!important}
 </style>
 </head>
 <body>
@@ -593,7 +577,7 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 <div id="toast"></div>
 
 <!-- ══ PICK ON MAP BANNER ══ -->
-<div id="pickBanner">📍 Click on map to set new location — Esc to cancel</div>
+<div id="pickBanner">📍 Click on map to place point — Esc to cancel</div>
 
 <!-- ══ EDIT PANEL (right slide-in) ══ -->
 <div id="editPanel">
@@ -614,8 +598,6 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
   <span class="et-label" id="etFeederLabel">—</span>
   <div class="et-sep"></div>
   <button class="et-btn et-edit" id="etEditBtn" onclick="toggleEditMode()">✏️ EDIT MODE</button>
-  <button class="et-btn" id="etLineBtn" onclick="toggleLineEditMode()"
-    style="background:rgba(255,152,0,.1);color:#ff9800;border:1px solid rgba(255,152,0,.25)">〰️ LINES</button>
   <button class="et-btn et-download" onclick="downloadFeederCSV()">⬇️ CSV</button>
   <button class="et-btn et-exit" onclick="exitFocusedFeeder()">✕ EXIT</button>
 </div>
@@ -680,7 +662,7 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
 // ══════════════════════════════════════════════════
 const map = L.map('map',{
   center:[17.4855,78.5122], zoom:14, zoomControl:false,
-  preferCanvas:false, editable:true,
+  preferCanvas:false,
   zoomAnimation:true, zoomAnimationThreshold:4,
   fadeAnimation:true, markerZoomAnimation:true,
   inertia:true, inertiaDeceleration:2800, inertiaMaxSpeed:Infinity,
@@ -1260,7 +1242,6 @@ map.on('mousemove',e=>{document.getElementById('coords').textContent=e.latlng.la
 // ══════════════════════════════════════════════════
 let editModeActive=false;
 let editTargetItem=null;
-let dragMarker=null;
 
 // Field definitions
 // key     = GeoJSON property name (space-separated, as used in data files)
@@ -1379,7 +1360,7 @@ function toggleEditMode(){
 
 // ── openEditPanel ──
 function openEditPanel(item){
-  if(dragMarker){map.removeLayer(dragMarker);dragMarker=null;}
+  cancelPickMode();
   editTargetItem=item;
   const props=item.layer.feature?.properties||{};
   const latlng=item.layer.getLatLng?.()??{lat:0,lng:0};
@@ -1418,10 +1399,8 @@ function openEditPanel(item){
     if(f.readOnly){
       inner+=`<div class="ep-readonly">${safeVal||'—'}</div>`;
     }else if(f.isGeo){
-      inner+=`<div class="ep-geo-wrap">
-        <input class="ep-input ep-geo-input" type="number" step="0.000001"
-          data-key="${f.key}" data-geo="true" data-csvkey="${f.csvKey}" value="${safeVal}"/>
-      </div>`;
+      inner+=`<input class="ep-input ep-geo-input" type="number" step="0.000001"
+        data-key="${f.key}" data-geo="true" data-csvkey="${f.csvKey}" value="${safeVal}"/>`;
     }else if(f.dropdown){
       const opts=dropdownOptions[f.key]||[];
       const trimVal=safeVal.trim();
@@ -1442,113 +1421,17 @@ function openEditPanel(item){
     body.appendChild(d);
   });
 
-  // ── Pick on Map button (appears below lat/lng fields) ──
-  const pickWrap=document.createElement('div');
-  pickWrap.style.cssText='padding:0 0 10px;display:flex;gap:8px;align-items:center';
-  pickWrap.innerHTML=`
-    <button class="ep-pick-btn" id="pickMapBtn" onclick="startPickMode()">📍 PICK ON MAP</button>
-    <span style="font-family:var(--mono);font-size:8px;color:rgba(0,200,255,.35);letter-spacing:.5px">
-      or drag the blue marker
-    </span>`;
-  // Insert after the longitude field (2nd geo field)
-  const geoFields=body.querySelectorAll('.ep-geo-wrap');
-  if(geoFields.length>=2){
-    geoFields[1].closest('.ep-field').insertAdjacentElement('afterend',pickWrap);
-  }else{
-    body.insertBefore(pickWrap,body.firstChild);
-  }
+  // ── Pick on Map button (inserted after longitude field) ──
+  const pickBtn=document.createElement('button');
+  pickBtn.className='ep-pick-btn';
+  pickBtn.id='pickMapBtn';
+  pickBtn.textContent='📍 PICK ON MAP';
+  pickBtn.onclick=startPickMode;
+  const lngField=body.querySelector('[data-key="longitude"]');
+  if(lngField)lngField.closest('.ep-field').insertAdjacentElement('afterend',pickBtn);
+  else body.appendChild(pickBtn);
 
   document.getElementById('editPanel').classList.add('open');
-
-  // ── Draggable reposition marker ──
-  const dIcon=L.divIcon({
-    className:'',
-    html:`<div style="width:22px;height:22px;border-radius:50%;
-      background:rgba(0,200,255,.22);border:2.5px solid #00c8ff;
-      box-shadow:0 0 14px rgba(0,200,255,.8);box-sizing:border-box;cursor:move"></div>`,
-    iconSize:[22,22],iconAnchor:[11,11]
-  });
-  dragMarker=L.marker([latlng.lat,latlng.lng],{draggable:true,zIndexOffset:3000,icon:dIcon}).addTo(map);
-
-  dragMarker.on('drag',function(e){
-    const ll=e.target.getLatLng();
-    const li=document.querySelector('#editPanelBody [data-key="latitude"]');
-    const lo=document.querySelector('#editPanelBody [data-key="longitude"]');
-    if(li)li.value=ll.lat.toFixed(6);
-    if(lo)lo.value=ll.lng.toFixed(6);
-  });
-
-  // Sync text inputs → drag marker
-  setTimeout(()=>{
-    document.querySelectorAll('#editPanelBody .ep-geo-input').forEach(inp=>{
-      inp.addEventListener('input',()=>{
-        const lat=parseFloat(document.querySelector('#editPanelBody [data-key="latitude"]')?.value);
-        const lng=parseFloat(document.querySelector('#editPanelBody [data-key="longitude"]')?.value);
-        if(!isNaN(lat)&&!isNaN(lng)&&dragMarker)dragMarker.setLatLng([lat,lng]);
-      });
-    });
-  },30);
-}
-
-// ── Pick-on-map mode ──
-let pickModeActive=false;
-let _pickMapClickHandler=null;
-let _pickEscHandler=null;
-
-function startPickMode(){
-  if(pickModeActive)return cancelPickMode();
-  pickModeActive=true;
-
-  const btn=document.getElementById('pickMapBtn');
-  if(btn)btn.classList.add('picking');
-  document.getElementById('pickBanner').classList.add('active');
-  map.getContainer().style.cursor='crosshair';
-
-  // One-shot map click handler
-  _pickMapClickHandler=function(e){
-    const lat=e.latlng.lat;
-    const lng=e.latlng.lng;
-
-    // Update inputs
-    const li=document.querySelector('#editPanelBody [data-key="latitude"]');
-    const lo=document.querySelector('#editPanelBody [data-key="longitude"]');
-    if(li)li.value=lat.toFixed(6);
-    if(lo)lo.value=lng.toFixed(6);
-
-    // Move drag marker
-    if(dragMarker)dragMarker.setLatLng([lat,lng]);
-    else if(editTargetItem){
-      // Recreate if missing
-      const dIcon=L.divIcon({
-        className:'',
-        html:`<div style="width:22px;height:22px;border-radius:50%;
-          background:rgba(0,200,255,.22);border:2.5px solid #00c8ff;
-          box-shadow:0 0 14px rgba(0,200,255,.8);box-sizing:border-box"></div>`,
-        iconSize:[22,22],iconAnchor:[11,11]
-      });
-      dragMarker=L.marker([lat,lng],{draggable:true,zIndexOffset:3000,icon:dIcon}).addTo(map);
-    }
-
-    cancelPickMode();
-  };
-
-  // Esc key cancels
-  _pickEscHandler=function(e){
-    if(e.key==='Escape')cancelPickMode();
-  };
-
-  map.once('click',_pickMapClickHandler);
-  document.addEventListener('keydown',_pickEscHandler);
-}
-
-function cancelPickMode(){
-  pickModeActive=false;
-  const btn=document.getElementById('pickMapBtn');
-  if(btn)btn.classList.remove('picking');
-  document.getElementById('pickBanner').classList.remove('active');
-  map.getContainer().style.cursor='';
-  if(_pickMapClickHandler){map.off('click',_pickMapClickHandler);_pickMapClickHandler=null;}
-  if(_pickEscHandler){document.removeEventListener('keydown',_pickEscHandler);_pickEscHandler=null;}
 }
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
@@ -1556,9 +1439,48 @@ function escH(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').r
 // ── closeEditPanel ──
 function closeEditPanel(){
   cancelPickMode();
-  if(dragMarker){map.removeLayer(dragMarker);dragMarker=null;}
   document.getElementById('editPanel').classList.remove('open');
   editTargetItem=null;
+}
+
+// ══ PICK ON MAP ENGINE ══════════════════════════
+let pickModeActive=false;
+let _pickHandler=null;
+let _pickEsc=null;
+
+function startPickMode(){
+  if(pickModeActive){cancelPickMode();return;}
+  pickModeActive=true;
+  const btn=document.getElementById('pickMapBtn');
+  if(btn){btn.classList.add('picking');btn.textContent='📍 PICKING… (Esc to cancel)';}
+  document.getElementById('pickBanner').classList.add('active');
+  map.getContainer().style.cursor='crosshair';
+
+  _pickHandler=function(e){
+    const lat=e.latlng.lat,lng=e.latlng.lng;
+    const li=document.querySelector('#editPanelBody [data-key="latitude"]');
+    const lo=document.querySelector('#editPanelBody [data-key="longitude"]');
+    if(li)li.value=lat.toFixed(6);
+    if(lo)lo.value=lng.toFixed(6);
+    // Move existing marker to picked location
+    if(editTargetItem?.layer?.setLatLng)editTargetItem.layer.setLatLng([lat,lng]);
+    cancelPickMode();
+    toast(`📍 Picked: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,2500);
+  };
+  _pickEsc=function(e){if(e.key==='Escape')cancelPickMode();};
+
+  map.once('click',_pickHandler);
+  document.addEventListener('keydown',_pickEsc);
+}
+
+function cancelPickMode(){
+  pickModeActive=false;
+  const btn=document.getElementById('pickMapBtn');
+  if(btn){btn.classList.remove('picking');btn.textContent='📍 PICK ON MAP';}
+  document.getElementById('pickBanner').classList.remove('active');
+  map.getContainer().style.cursor='';
+  if(_pickHandler){map.off('click',_pickHandler);_pickHandler=null;}
+  if(_pickEsc){document.removeEventListener('keydown',_pickEsc);_pickEsc=null;}
 }
 
 // ── saveEditPoint ──
@@ -1650,24 +1572,7 @@ function downloadFeederCSV(){
   a.href=URL.createObjectURL(blob);
   a.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_edited.csv';
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-
-  // Also export line vertex changes if any
-  const lineRecs=(lineEdits[fn]||[]).filter(r=>r.editedLatLngs);
-  if(lineRecs.length){
-    const lineRows=['segment_index,vertex_index,latitude,longitude'];
-    lineRecs.forEach((rec,si)=>{
-      rec.editedLatLngs.forEach((ll,vi)=>{
-        lineRows.push(`${si},${vi},${ll.lat},${ll.lng}`);
-      });
-    });
-    const lb=new Blob(['\uFEFF'+lineRows.join('\r\n')],{type:'text/csv;charset=utf-8'});
-    const la=document.createElement('a');
-    la.href=URL.createObjectURL(lb);
-    la.download=fn.replace(/[^a-z0-9]/gi,'_').substring(0,50)+'_lines_edited.csv';
-    document.body.appendChild(la);la.click();document.body.removeChild(la);
-  }
-
-  toast(`Downloaded ${rows.length-1} points${lineRecs.length?' + '+lineRecs.length+' line edits':''} ⬇️`,3000);
+  toast(`Downloaded ${rows.length-1} points ⬇️`,3000);
 }
 
 let _tt;
@@ -1749,95 +1654,6 @@ function syncLabels(){
 }
 map.on('zoomend',syncLabels);
 document.getElementById('loader').addEventListener('click',dismissLoader);
-
-// ══════════════════════════════════════════════════
-// LINE EDIT MODE ENGINE
-// ══════════════════════════════════════════════════
-let lineEditModeActive=false;
-const lineEdits={};  // feederName -> [ {layer, originalLatLngs, editedLatLngs} ]
-const activeEditingLayers=new Set();
-
-function toggleLineEditMode(){
-  if(!focusedFeeder)return;
-  lineEditModeActive=!lineEditModeActive;
-  const btn=document.getElementById('etLineBtn');
-
-  if(lineEditModeActive){
-    btn.classList.add('et-line-on');
-    btn.textContent='〰️ ON';
-    enableLineEditing();
-    toast('Line Edit ON — click any line to edit vertices 〰️');
-  }else{
-    btn.classList.remove('et-line-on');
-    btn.textContent='〰️ LINES';
-    disableLineEditing();
-    toast('Line Edit OFF — vertex changes saved');
-  }
-}
-
-function enableLineEditing(){
-  const fn=focusedFeeder;
-  allLayers.forEach(item=>{
-    if(item.feederName!==fn)return;
-    if(item.reg.type!=='lines'&&item.reg.type!=='fsegs')return;
-    if(!map.hasLayer(item.layer))return;
-    if(typeof item.layer.enableEdit!=='function')return;
-
-    // Store original latlngs before editing
-    if(!lineEdits[fn])lineEdits[fn]=[];
-    const existing=lineEdits[fn].find(e=>e.layer===item.layer);
-    if(!existing){
-      lineEdits[fn].push({
-        layer:item.layer,
-        feederName:fn,
-        originalLatLngs:item.layer.getLatLngs().map(ll=>({lat:ll.lat,lng:ll.lng})),
-        editedLatLngs:null
-      });
-    }
-
-    item.layer.enableEdit();
-    activeEditingLayers.add(item.layer);
-
-    // Highlight line while editable
-    item.layer.setStyle&&item.layer.setStyle({
-      color:'#ff9800', weight:4, opacity:1, dashArray:'6,4'
-    });
-
-    // Save edits on vertex move
-    item.layer.on('editable:vertex:dragend editable:vertex:deleted',function(){
-      const rec=lineEdits[fn].find(e=>e.layer===item.layer);
-      if(rec)rec.editedLatLngs=item.layer.getLatLngs().map(ll=>({lat:ll.lat,lng:ll.lng}));
-    });
-  });
-}
-
-function disableLineEditing(){
-  const fn=focusedFeeder;
-  activeEditingLayers.forEach(layer=>{
-    if(typeof layer.disableEdit==='function')layer.disableEdit();
-    // Restore original line style based on feeder status
-    const item=allLayers.find(i=>i.layer===layer);
-    if(item){
-      const cs=feederStatus[item.feederName]||'live';
-      const isUG=item.cable==='UG';
-      const color=cs==='breakdown'?'#ff1744':cs==='idle'?'rgba(176,204,224,.25)':isUG?'#00c8ff':'#ff4444';
-      layer.setStyle&&layer.setStyle({color,weight:isUG?2.5:2,opacity:.92,dashArray:isUG?null:'6,4'});
-    }
-  });
-  activeEditingLayers.clear();
-}
-
-// Also disable line editing when exitFocusedFeeder is called
-const _origExit=exitFocusedFeeder;
-exitFocusedFeeder=function(){
-  if(lineEditModeActive){
-    lineEditModeActive=true;
-    toggleLineEditMode();
-  }
-  _origExit();
-  const btn=document.getElementById('etLineBtn');
-  if(btn){btn.classList.remove('et-line-on');btn.textContent='〰️ LINES';}
-};
 </script>
 </body>
 </html>
