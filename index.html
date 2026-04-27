@@ -166,60 +166,6 @@
 <script src="data/EHTSSCOORDINATESWITHDATA_152.js"></script>
 <script src="data/SS_WEB_INTERACT_153.js"></script>
 
-<!-- ══ FIREBASE ══ -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script>
-const firebaseConfig={
-  apiKey:"AIzaSyAEiAyKDV1oLIED6XCPMitZ4ITMZUczDGc",
-  authDomain:"mapsscadtgspdcl.firebaseapp.com",
-  databaseURL:"https://mapsscadtgspdcl-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:"mapsscadtgspdcl",
-  storageBucket:"mapsscadtgspdcl.firebasestorage.app",
-  messagingSenderId:"682778709177",
-  appId:"1:682778709177:web:477e942a1826bbdbcc1f68"
-};
-firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
-
-// ── Firebase helpers ──────────────────────────────
-const FB={
-  // Save an edited point
-  saveEdit(editId,feederName,data){
-    const key=editId.toString().replace(/[.#$/\[\]]/g,'_');
-    return db.ref(`edits/${key}`).set({...data,feederName,editId,ts:Date.now()});
-  },
-  // Save a deleted point
-  saveDelete(editId,feederName){
-    const key=editId.toString().replace(/[.#$/\[\]]/g,'_');
-    return db.ref(`deletes/${key}`).set({editId,feederName,ts:Date.now()});
-  },
-  // Remove a delete (if un-deleted)
-  removeDelete(editId){
-    const key=editId.toString().replace(/[.#$/\[\]]/g,'_');
-    return db.ref(`deletes/${key}`).remove();
-  },
-  // Load all edits + deletes once (on page open)
-  async loadAll(){
-    const [editsSnap,deletesSnap]=await Promise.all([
-      db.ref('edits').once('value'),
-      db.ref('deletes').once('value')
-    ]);
-    return{
-      edits:editsSnap.val()||{},
-      deletes:deletesSnap.val()||{}
-    };
-  },
-  // Listen for real-time changes from other users
-  listenChanges(onEdit,onDelete,onDeleteRemoved){
-    db.ref('edits').on('child_changed',(snap)=>onEdit(snap.val()));
-    db.ref('edits').on('child_added',(snap)=>onEdit(snap.val()));
-    db.ref('deletes').on('child_added',(snap)=>onDelete(snap.val()));
-    db.ref('deletes').on('child_removed',(snap)=>onDeleteRemoved(snap.val()));
-  }
-};
-</script>
-
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -574,13 +520,6 @@ path.feeder-flow-overlay{stroke-dasharray:4 20!important;stroke-linecap:round!im
   <div id="srchWrap">
     <input id="srchInput" placeholder="Search pole no., feeder, cable point…" autocomplete="off"/>
     <span class="srch-ic">⌕</span>
-  </div>
-  <div id="fbStatus" title="Firebase sync status" style="display:flex;align-items:center;gap:5px;
-    font-family:var(--mono);font-size:9px;padding:3px 10px;border-radius:10px;
-    border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);
-    color:rgba(176,204,224,.45);letter-spacing:1px;cursor:default">
-    <span id="fbDot" style="width:6px;height:6px;border-radius:50%;background:#78909c;flex-shrink:0;transition:background .5s"></span>
-    <span id="fbLbl">DB…</span>
   </div>
   <div class="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</div>
   <div class="chip chip-live">● LIVE</div>
@@ -1529,18 +1468,11 @@ function saveEditPoint(){
     }
   });
 
-  const editData={props:newProps,lat:newLat,lng:newLng};
-  store.edited[item.layer._editId]=editData;
+  store.edited[item.layer._editId]={props:newProps,lat:newLat,lng:newLng};
   if(newLat&&newLng&&item.layer.setLatLng)item.layer.setLatLng([newLat,newLng]);
   if(item.layer.feature)Object.assign(item.layer.feature.properties,newProps);
-
-  // ── Save to Firebase ──
-  setFbStatus('saving');
-  FB.saveEdit(item.layer._editId,item.feederName,editData)
-    .then(()=>{setFbStatus('synced');toast('Point saved ✓ (synced to cloud)',2500);})
-    .catch(err=>{setFbStatus('error');toast('Saved locally. Cloud sync failed: '+err.message,3000);});
-
   closeEditPanel();
+  toast('Point saved ✓',2000);
 }
 
 // ── deleteEditPoint ──
@@ -1552,14 +1484,8 @@ function deleteEditPoint(){
   item._deleted=true;
   if(map.hasLayer(item.layer))map.removeLayer(item.layer);
   if(item.layer.flowLayer&&map.hasLayer(item.layer.flowLayer))map.removeLayer(item.layer.flowLayer);
-
-  // ── Save delete to Firebase ──
-  setFbStatus('saving');
-  FB.saveDelete(item.layer._editId,item.feederName)
-    .then(()=>{setFbStatus('synced');toast('Point deleted 🗑 (synced to cloud)',2500);})
-    .catch(()=>{setFbStatus('error');toast('Deleted locally. Cloud sync failed.',3000);});
-
   closeEditPanel();
+  toast('Point deleted 🗑',2000);
 }
 
 // ── exitFocusedFeeder ──
@@ -1695,92 +1621,6 @@ function syncLabels(){
 }
 map.on('zoomend',syncLabels);
 document.getElementById('loader').addEventListener('click',dismissLoader);
-
-// ══════════════════════════════════════════════════
-// FIREBASE SYNC
-// ══════════════════════════════════════════════════
-
-// Status indicator helper
-function setFbStatus(state){
-  const dot=document.getElementById('fbDot');
-  const lbl=document.getElementById('fbLbl');
-  if(!dot||!lbl)return;
-  const states={
-    connected: {color:'#00e676',text:'CLOUD SYNC'},
-    synced:    {color:'#00e676',text:'SAVED ✓'},
-    saving:    {color:'#ffab00',text:'SAVING…'},
-    loading:   {color:'#00c8ff',text:'LOADING…'},
-    error:     {color:'#ff1744',text:'SYNC ERR'},
-    offline:   {color:'#78909c',text:'OFFLINE'},
-  };
-  const s=states[state]||states.offline;
-  dot.style.background=s.color;
-  lbl.textContent=s.text;
-  // Auto-revert synced → connected after 3s
-  if(state==='synced')setTimeout(()=>setFbStatus('connected'),3000);
-}
-
-// Apply a single edit record to the map
-function applyEditToMap(data){
-  if(!data||data.editId===undefined)return;
-  const item=allLayers.find(i=>i.layer._editId===data.editId);
-  if(!item)return;
-  const store=getEditStore(data.feederName||item.feederName);
-  store.edited[data.editId]=data;
-  if(data.lat&&data.lng&&item.layer.setLatLng)item.layer.setLatLng([data.lat,data.lng]);
-  if(data.props&&item.layer.feature)Object.assign(item.layer.feature.properties,data.props);
-}
-
-// Apply a delete record to the map
-function applyDeleteToMap(data){
-  if(!data||data.editId===undefined)return;
-  const item=allLayers.find(i=>i.layer._editId===data.editId);
-  if(!item||item._deleted)return;
-  const store=getEditStore(data.feederName||item.feederName);
-  store.deleted.add(data.editId);
-  item._deleted=true;
-  if(map.hasLayer(item.layer))map.removeLayer(item.layer);
-  if(item.layer.flowLayer&&map.hasLayer(item.layer.flowLayer))map.removeLayer(item.layer.flowLayer);
-}
-
-// On page load: pull all saved edits + deletes from Firebase
-async function loadFirebaseData(){
-  setFbStatus('loading');
-  try{
-    const {edits,deletes}=await FB.loadAll();
-
-    // Apply deletes first
-    Object.values(deletes).forEach(d=>applyDeleteToMap(d));
-
-    // Then apply edits (moves points to correct position)
-    Object.values(edits).forEach(e=>applyEditToMap(e));
-
-    setFbStatus('connected');
-    const eCount=Object.keys(edits).length;
-    const dCount=Object.keys(deletes).length;
-    if(eCount||dCount)toast(`Loaded ${eCount} edits, ${dCount} deletions from cloud ☁️`,3500);
-
-    // Start listening for real-time changes from other users
-    FB.listenChanges(
-      (editData)=>{applyEditToMap(editData);toast('🔄 Point updated by another user',2000);},
-      (delData) =>{applyDeleteToMap(delData);toast('🔄 Point deleted by another user',2000);},
-      ()=>{}
-    );
-
-    // Monitor connection state
-    firebase.database().ref('.info/connected').on('value',snap=>{
-      setFbStatus(snap.val()?'connected':'offline');
-    });
-
-  }catch(err){
-    setFbStatus('error');
-    console.warn('Firebase load failed:',err);
-    toast('Cloud sync unavailable — working offline',3000);
-  }
-}
-
-// Load Firebase data after map is ready (slight delay to let layers render first)
-setTimeout(()=>loadFirebaseData(),2000);
 </script>
 </body>
 </html>
