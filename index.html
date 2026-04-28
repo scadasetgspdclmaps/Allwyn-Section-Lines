@@ -1363,6 +1363,14 @@ function openEditPanel(item){
   cancelPickMode();
   editTargetItem=item;
   const props=item.layer.feature?.properties||{};
+
+  // ── TEMPORARY DEBUG: shows actual GeoJSON keys in console ──
+  console.log('=== POINT PROPERTIES ===');
+  console.log(JSON.stringify(props, null, 2));
+  console.log('Keys:', Object.keys(props));
+  // Also show in a toast for quick visibility
+  const keys=Object.keys(props).slice(0,5).join(', ');
+  toast('Keys: '+keys, 5000);
   const latlng=item.layer.getLatLng?.()??{lat:0,lng:0};
   const store=getEditStore(item.feederName);
   const saved=store.edited[item.layer._editId]||{};
