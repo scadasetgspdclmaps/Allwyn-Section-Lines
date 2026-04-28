@@ -1250,23 +1250,23 @@ let editTargetItem=null;
 // dropdown= render as <select> with discovered options
 // isGeo   = lat/lng: text input + drag marker
 const EDIT_FIELDS=[
-  {key:'Feeder Name',         csvKey:'feeder_name',          label:'FEEDER NAME',          readOnly:true  },
-  {key:'Type of Feeder',      csvKey:'Type_of_feeder',       label:'TYPE OF FEEDER',       dropdown:true  },
-  {key:'latitude',            csvKey:'latitude',             label:'LATITUDE',             isGeo:true     },
-  {key:'longitude',           csvKey:'longitude',            label:'LONGITUDE',            isGeo:true     },
-  {key:'Pole Number',         csvKey:'pole_number',          label:'POLE NUMBER'                          },
-  {key:'Cut Point',           csvKey:'cut_point',            label:'CUT POINT',            dropdown:true  },
-  {key:'Pole Feeding To',     csvKey:'pole_feeding_to',      label:'POLE FEEDING TO',      dropdown:true  },
-  {key:'Type of Cable Point', csvKey:'type_of_cable_point',  label:'TYPE OF CABLE POINT',  dropdown:true  },
-  {key:'type of feeder',      csvKey:'type_of_feeder',       label:'TYPE  (UG / OH)',      dropdown:true  },
-  {key:'Type of Pole',        csvKey:'type_of_pole',         label:'TYPE OF POLE',         dropdown:true  },
-  {key:'Section',             csvKey:'section',              label:'SECTION',              readOnly:true  },
-  {key:'Sub Division',        csvKey:'sub_division',         label:'SUB DIVISION',         readOnly:true  },
-  {key:'Division',            csvKey:'division',             label:'DIVISION',             readOnly:true  },
+  {key:'Feeder Name',         csvKey:'feeder_name',          label:'FEEDER NAME',          readOnly:true },
+  {key:'Nature of Feeder',    csvKey:'nature_of_feeder',     label:'NATURE OF FEEDER',     readOnly:true },
+  {key:'Type of Feeder',      csvKey:'Type_of_feeder',       label:'TYPE OF FEEDER',       dropdown:true },
+  {key:'Latitude',            csvKey:'latitude',             label:'LATITUDE',             isGeo:true    },
+  {key:'Longitude',           csvKey:'longitude',            label:'LONGITUDE',            isGeo:true    },
+  {key:'Pole Number',         csvKey:'pole_number',          label:'POLE NUMBER'                         },
+  {key:'Cut Point',           csvKey:'cut_point',            label:'CUT POINT',            dropdown:true },
+  {key:'Pole Feeding to',     csvKey:'pole_feeding_to',      label:'POLE FEEDING TO',      dropdown:true },
+  {key:'Type of Cable Point', csvKey:'type_of_cable_point',  label:'TYPE OF CABLE POINT',  dropdown:true },
+  {key:'Type of Pole',        csvKey:'type_of_pole',         label:'TYPE OF POLE',         dropdown:true },
+  {key:'Section',             csvKey:'section',              label:'SECTION',              readOnly:true },
+  {key:'Sub Division',        csvKey:'sub_division',         label:'SUB DIVISION',         readOnly:true },
+  {key:'Division',            csvKey:'division',             label:'DIVISION',             readOnly:true },
 ];
 
-const CSV_COLS=['feeder_name','Type_of_feeder','latitude','longitude','pole_number',
-  'cut_point','pole_feeding_to','type_of_cable_point','type_of_feeder','type_of_pole',
+const CSV_COLS=['feeder_name','nature_of_feeder','Type_of_feeder','latitude','longitude',
+  'pole_number','cut_point','pole_feeding_to','type_of_cable_point','type_of_pole',
   'section','sub_division','division'];
 
 const POINT_TYPES=['points','cut','ab','dp','fpoles'];
@@ -1278,20 +1278,35 @@ function getEditStore(fn){
   return editChanges[fn];
 }
 
-// ── Property resolver: tries key variants in priority order ──
-function resolveProp(props,key){
-  if(!props||key===null||key===undefined)return'';
-  const tries=[
-    key,
-    key.replace(/ /g,'_'),
-    key.toLowerCase(),
-    key.toLowerCase().replace(/ /g,'_'),
-    key.replace(/\b\w/g,c=>c.toUpperCase()),
-    key.replace(/\b\w/g,c=>c.toUpperCase()).replace(/ /g,'_'),
-  ];
-  for(const t of tries){if(t in props&&props[t]!==null&&props[t]!==undefined)return props[t];}
+// ── Property resolver ──
+// Exact GeoJSON key aliases confirmed from live data popup
+const PROP_ALIASES={
+  'feeder_name':        ['Feeder Name','feeder_name','feeder name'],
+  'nature_of_feeder':   ['Nature of Feeder','nature_of_feeder','Nature_of_Feeder'],
+  'Type_of_feeder':     ['Type of Feeder','Type_of_feeder','type of feeder','type_of_feeder'],
+  'latitude':           ['Latitude','latitude'],
+  'longitude':          ['Longitude','longitude'],
+  'pole_number':        ['Pole Number','pole_number','Pole_Number'],
+  'cut_point':          ['Cut Point','cut_point','Cut_Point'],
+  'pole_feeding_to':    ['Pole Feeding to','Pole Feeding To','pole_feeding_to','Pole_Feeding_to'],
+  'type_of_cable_point':['Type of Cable Point','type_of_cable_point','Type_of_Cable_Point'],
+  'type_of_pole':       ['Type of Pole','type_of_pole','Type_of_Pole'],
+  'section':            ['Section','section'],
+  'sub_division':       ['Sub Division','sub_division','Sub_Division'],
+  'division':           ['Division','division'],
+};
+
+function resolveProp(props,keyOrCsvKey){
+  if(!props)return'';
+  // Try exact aliases first
+  const aliases=PROP_ALIASES[keyOrCsvKey];
+  if(aliases){
+    for(const a of aliases){if(a in props&&props[a]!==null&&props[a]!==undefined)return props[a];}
+  }
+  // Direct lookup
+  if(keyOrCsvKey in props&&props[keyOrCsvKey]!==null)return props[keyOrCsvKey];
   // Normalized case-insensitive fallback
-  const norm=key.toLowerCase().replace(/[_ ]/g,'');
+  const norm=keyOrCsvKey.toLowerCase().replace(/[_ ]/g,'');
   for(const k of Object.keys(props)){
     if(k.toLowerCase().replace(/[_ ]/g,'')===norm&&props[k]!==null&&props[k]!==undefined)return props[k];
   }
@@ -1308,8 +1323,7 @@ function buildDropdownOptions(){
     if(!POINT_TYPES.includes(item.reg.type))return;
     const props=item.layer.feature?.properties||{};
     dFields.forEach(f=>{
-      // Try both key variants to find the value
-      const val=props[f.csvKey]??props[f.key]??resolveProp(props,f.key)??resolveProp(props,f.csvKey);
+      const val=resolveProp(props,f.csvKey)??resolveProp(props,f.key);
       if(val===null||val===undefined||String(val).trim()==='')return;
       if(!sets[f.key])sets[f.key]=new Set();
       sets[f.key].add(String(val).trim());
@@ -1363,14 +1377,6 @@ function openEditPanel(item){
   cancelPickMode();
   editTargetItem=item;
   const props=item.layer.feature?.properties||{};
-
-  // ── TEMPORARY DEBUG: shows actual GeoJSON keys in console ──
-  console.log('=== POINT PROPERTIES ===');
-  console.log(JSON.stringify(props, null, 2));
-  console.log('Keys:', Object.keys(props));
-  // Also show in a toast for quick visibility
-  const keys=Object.keys(props).slice(0,5).join(', ');
-  toast('Keys: '+keys, 5000);
   const latlng=item.layer.getLatLng?.()??{lat:0,lng:0};
   const store=getEditStore(item.feederName);
   const saved=store.edited[item.layer._editId]||{};
@@ -1387,19 +1393,17 @@ function openEditPanel(item){
     // Priority: saved edit → direct csvKey prop → f.key via resolveProp → csvKey via resolveProp
     let curVal='';
     if(f.isGeo){
-      curVal=f.key==='latitude'
+      curVal=f.csvKey==='latitude'
         ?(saved.lat!=null?saved.lat:latlng.lat)
         :(saved.lng!=null?saved.lng:latlng.lng);
       curVal=parseFloat(curVal||0).toFixed(6);
     }else if(f.key==='Feeder Name'){
       curVal=item.feederName||'';
     }else{
-      // Try every variant so we catch both underscore and space-separated GeoJSON keys
+      // Use csvKey for alias lookup (most reliable), then f.key as fallback
       const v=saved.props?.[f.csvKey]
-        ??props[f.csvKey]
-        ??props[f.key]
-        ??resolveProp(props,f.key)
         ??resolveProp(props,f.csvKey)
+        ??resolveProp(props,f.key)
         ??'';
       curVal=v;
     }
@@ -1575,7 +1579,7 @@ function downloadFeederCSV(){
       if(csvk==='latitude')return csvCell(saved.lat!=null?saved.lat:latlng.lat);
       if(csvk==='longitude')return csvCell(saved.lng!=null?saved.lng:latlng.lng);
       const field=EDIT_FIELDS.find(f=>f.csvKey===csvk);
-      const v=saved.props?.[csvk]??resolveProp(props,field?.key||csvk);
+      const v=saved.props?.[csvk]??resolveProp(props,csvk)??resolveProp(props,field?.key||csvk);
       return csvCell(v);
     });
     rows.push(row.join(','));
