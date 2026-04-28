@@ -1303,23 +1303,23 @@ const dropdownOptions={};
 
 function buildDropdownOptions(){
   const sets={};
-  const dKeys=EDIT_FIELDS.filter(f=>f.dropdown).map(f=>f.key);
+  const dFields=EDIT_FIELDS.filter(f=>f.dropdown);
   allLayers.forEach(item=>{
     if(!POINT_TYPES.includes(item.reg.type))return;
     const props=item.layer.feature?.properties||{};
-    dKeys.forEach(key=>{
-      const val=resolveProp(props,key);
+    dFields.forEach(f=>{
+      // Try both key variants to find the value
+      const val=props[f.csvKey]??props[f.key]??resolveProp(props,f.key)??resolveProp(props,f.csvKey);
       if(val===null||val===undefined||String(val).trim()==='')return;
-      if(!sets[key])sets[key]=new Set();
-      sets[key].add(String(val).trim());
+      if(!sets[f.key])sets[f.key]=new Set();
+      sets[f.key].add(String(val).trim());
     });
   });
-  dKeys.forEach(key=>{
-    if(!sets[key]){dropdownOptions[key]=[];return;}
-    const arr=[...sets[key]].filter(Boolean);
-    // Sort: numeric if all numeric, else alpha
+  dFields.forEach(f=>{
+    if(!sets[f.key]){dropdownOptions[f.key]=[];return;}
+    const arr=[...sets[f.key]].filter(Boolean);
     const allNum=arr.every(v=>!isNaN(v)&&v!=='');
-    dropdownOptions[key]=arr.sort(allNum?(a,b)=>Number(a)-Number(b):(a,b)=>a.localeCompare(b));
+    dropdownOptions[f.key]=arr.sort(allNum?(a,b)=>Number(a)-Number(b):(a,b)=>a.localeCompare(b));
   });
 }
 
@@ -1375,21 +1375,27 @@ function openEditPanel(item){
   body.innerHTML='';
 
   EDIT_FIELDS.forEach(f=>{
-    // Determine current value
+    // Determine current value — try saved first, then all key variants
+    // Priority: saved edit → direct csvKey prop → f.key via resolveProp → csvKey via resolveProp
     let curVal='';
     if(f.isGeo){
       curVal=f.key==='latitude'
         ?(saved.lat!=null?saved.lat:latlng.lat)
         :(saved.lng!=null?saved.lng:latlng.lng);
       curVal=parseFloat(curVal||0).toFixed(6);
-    }else if(f.readOnly){
-      // Auto-fill: feeder name from focused feeder; others from first matching prop
-      if(f.key==='Feeder Name')curVal=item.feederName||'';
-      else curVal=saved.props?.[f.csvKey]??resolveProp(props,f.key);
+    }else if(f.key==='Feeder Name'){
+      curVal=item.feederName||'';
     }else{
-      curVal=saved.props?.[f.csvKey]??resolveProp(props,f.key);
+      // Try every variant so we catch both underscore and space-separated GeoJSON keys
+      const v=saved.props?.[f.csvKey]
+        ??props[f.csvKey]
+        ??props[f.key]
+        ??resolveProp(props,f.key)
+        ??resolveProp(props,f.csvKey)
+        ??'';
+      curVal=v;
     }
-    const safeVal=String(curVal??'');
+    const safeVal=String(curVal??'').trim();
 
     const d=document.createElement('div');
     d.className='ep-field';
